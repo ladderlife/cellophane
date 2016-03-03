@@ -1,4 +1,6 @@
-(ns cellophane.next)
+(ns cellophane.next
+  (:require [cellophane.protocols :as p]))
+
 
 ;; ===================================================================
 ;; defui
