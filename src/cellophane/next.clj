@@ -32,7 +32,8 @@
 (defn defui* [name forms]
   (let [{:keys [dt statics]} (collect-statics forms)]
     `(def ~name
-      (reify cellophane.protocols/ReactLifecycle
+      (reify
+        cellophane.protocols/ReactLifecycle
         ~@(rest dt)
         cellophane.protocols/ReactComponent
         (~'-render [this#]
