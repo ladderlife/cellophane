@@ -56,6 +56,7 @@
       (reify
         cellophane.protocols/ReactLifecycle
         ~@(rest dt)
+        ~@(:protocols statics)
         cellophane.protocols/ReactComponent
         (~'-render [this#]
          (.render this#))
