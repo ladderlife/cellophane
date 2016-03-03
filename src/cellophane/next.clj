@@ -1,6 +1,27 @@
 (ns cellophane.next
   (:require [cellophane.protocols :as p]))
 
+;; ===================================================================
+;; Protocols
+
+(defprotocol Ident
+  (ident [this props] "Return the ident for this component"))
+
+(defprotocol IQueryParams
+  (params [this] "Return the query parameters"))
+
+(extend-type Object
+  IQueryParams
+  (params [_]))
+
+(defprotocol IQuery
+  (query [this] "Return the component's unbound query"))
+
+(defprotocol ILocalState
+  (-set-state! [this new-state] "Set the component's local state")
+  (-get-state [this] "Get the component's local state")
+  (-get-rendered-state [this] "Get the component's rendered local state")
+  (-merge-pending-state! [this] "Get the component's pending local state"))
 
 ;; ===================================================================
 ;; defui
