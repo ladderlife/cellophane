@@ -1,4 +1,4 @@
-(ns cellophane.core-test
+(ns cellophane.next-test
   (:require [clojure.test :refer [deftest testing is are]]
             [cellophane.next :as om :refer [defui]]))
 
@@ -25,4 +25,6 @@
   (testing "defui implements statics"
     (is (= (.query ComponentWithStatics) [:foo]))
     (is (= (.ident ComponentWithStatics {}) [:by-id 42]))))
+
+(deftest test-factory)
 
