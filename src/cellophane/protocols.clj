@@ -1,8 +1,10 @@
 (ns cellophane.protocols)
 
 (defprotocol IReactDOMElement
-  (-children [this] "returns the element's children")
   (-render-to-string [this] "renders a DOM node to string."))
+
+(defprotocol IReactChildren
+  (-children [this] "returns the element's children"))
 
 (defprotocol IReactComponent
   (-render [this] "must return a valid ReactDOMElement."))

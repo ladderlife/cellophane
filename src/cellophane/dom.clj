@@ -186,14 +186,14 @@
 
 (defrecord Element [tag attrs children]
   p/IReactDOMElement
-  (-children [this] children)
   (-render-to-string [this]
-    (render-element this)))
+    (render-element this))
+
+  p/IReactChildren
+  (-children [this] children))
 
 (defrecord Text [s]
   p/IReactDOMElement
-  (-children [this]
-    nil)
   (-render-to-string [this]
     (assert (string? s))
     s))
