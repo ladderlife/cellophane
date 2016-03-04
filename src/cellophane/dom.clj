@@ -186,6 +186,54 @@
 
 (defrecord Element [tag attrs children]
   p/ReactDOMElement
+  (-children [this] children)
   (-render-to-string [this]
     (render-element this)))
+
+(defrecord Text [s]
+  p/ReactDOMElement
+  (-children [this]
+    nil)
+  (-render-to-string [this]
+    (assert (string? s))
+    s))
+
+(defn text-node
+  "HTML text node"
+  [s]
+  (map->Text {:s s}))
+
+(defn element
+  "Creates a dom node."
+  [{:keys [tag attrs children] :as elem}]
+                                        ;{:post [(valid-element? %)]}
+  (assert (name tag))
+  (assert (or (nil? attrs) (map? attrs)) (format "elem %s attrs invalid" elem))
+  (let [children (doall (->> (clojure.core/map
+                               (fn [c]
+                                 (cond
+                                   (satisfies? p/ReactDOMElement c) c
+                                   (satisfies? p/ReactComponent c) c
+                                   (string? c) (text-node c)
+                                   (nil? c) nil
+                                   :else (do
+                                           (println "invalid child element:" c (class c))
+                                           (assert false)))) children)
+                          (filter identity)))]
+
+    (map->Element {:tag (name tag)
+                   :attrs attrs
+                   :children children})))
+
+(defn gen-tag-fn [tag]
+  `(defn ~tag [~'attrs & ~'children]
+     (element {:tag (quote ~tag)
+               :attrs ~'attrs
+               :children ~'children})))
+
+(defmacro gen-all-tags []
+  `(do
+     ~@(clojure.core/map gen-tag-fn tags)))
+
+(gen-all-tags)
 

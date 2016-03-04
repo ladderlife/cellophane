@@ -1,6 +1,7 @@
 (ns cellophane.protocols)
 
 (defprotocol ReactDOMElement
+  (-children [this] "returns the element's children")
   (-render-to-string [this] "renders a DOM node to string."))
 
 (defprotocol ReactComponent
