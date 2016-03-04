@@ -23,9 +23,15 @@
 (defn simple-component []
   (dom/div nil "Hello World"))
 
+(defn simple-nested-component []
+  (dom/div nil
+    (dom/h1 #js {:id "page-title"} "Title")))
+
 (deftest test-render-element
   (testing "render-element works with empty content in all tags"
     (test-container-tags)
     (test-void-tags))
   (testing "render-element renders simple function elements"
-    (is (= (dom/render-element (simple-component)) "<div>Hello World</div>"))))
+    (are [component res] (= (dom/render-element component) res)
+      (simple-component) "<div>Hello World</div>"
+      (simple-nested-component) "<div><h1 id=\"page-title\">Title</h1></div>")))
