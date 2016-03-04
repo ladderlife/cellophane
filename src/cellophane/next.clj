@@ -52,26 +52,44 @@
 
 (defn defui* [name forms]
   (let [{:keys [dt statics]} (collect-statics forms)]
-    `(def ~name
-      (reify
-        cellophane.protocols/ReactLifecycle
-        ~@(rest dt)
-        ~@(:protocols statics)
-        cellophane.protocols/ReactComponent
-        (~'-render [this#]
-         (.render this#))
-        ))))
+    `(defn ~name
+       ([]
+        (~name nil))
+       ([props# & children#]
+        (reify
+          ;; TODO: props & children
+          cellophane.protocols/ReactLifecycle
+          ~@(rest dt)
+          ~@(:protocols statics)
+          cellophane.protocols/ReactComponent
+          (~'-render [this#]
+           (.render this#)))))))
 
 (defmacro defui [name & forms]
   (defui* name forms))
 
-(defn factory [])
+(defn factory
+  ([class]
+   (factory class nil))
+  ;; TODO: support key-fn etc.
+  ([class {:keys [validator key-fn] :as opts}]
+   class
+   #_(fn self
+     ([] (self nil))
+     ([props & children]
+      ))
+   ))
+
+#_(defn add-root!
+  ([reconciler root-class target]
+   (add-root! reconciler root-class target nil))
+  ([reconciler root-class target options]
+   ))
 
 (comment
   (defui* 'Artist
-     '(static IFoo
-        (foo [_])
-        (bar [_])
-        static field sel '[:woz ?noz]
+     '(static IQuery
+        (query [_]
+          [:foo :bar])
         Object
         (render [_] "hello world"))))
