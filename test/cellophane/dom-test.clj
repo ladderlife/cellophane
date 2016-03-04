@@ -1,5 +1,6 @@
 (ns cellophane.dom-test
   (:require [clojure.test :refer [deftest testing is are]]
+            [cellophane.next :as cellophane :refer [defui]]
             [cellophane.dom :as dom]))
 
 (defn test-tags [tags res-fn]
@@ -42,3 +43,11 @@
       (simple-nested-component) "<div><h1 id=\"page-title\">Title</h1></div>"
       (comp-nested-component) "<div><div>Hello World</div><div><h1 id=\"page-title\">Title</h1></div></div>")))
 
+(defui SimpleComponent
+  Object
+  (render [this]
+    (dom/div nil "Hello World")))
+
+(deftest test-render-defui
+  (let [c (SimpleComponent)]
+    (is (= (dom/render-to-string c) "<div>Hello World</div>"))))

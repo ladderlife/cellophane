@@ -237,3 +237,7 @@
 
 (gen-all-tags)
 
+(defn render-to-string [class]
+  {:pre [(satisfies? p/ReactComponent class)]}
+  (let [element (p/-render class)]
+    (p/-render-to-string element)))
