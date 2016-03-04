@@ -1,7 +1,6 @@
 (ns cellophane.core-test
-  (require [clojure.test :refer [deftest testing is are]]
-           [cellophane.next :as om :refer [defui]]
-           [cellophane.dom :as dom]))
+  (:require [clojure.test :refer [deftest testing is are]]
+            [cellophane.next :as om :refer [defui]]))
 
 (defui SimpleComponent
   Object

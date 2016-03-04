@@ -139,3 +139,53 @@
     options
     select])
 
+(defn escape-html
+  "Change special characters into HTML character entities."
+  [text]
+  {:pre [(string? text)]
+   :post [(string? %)]}
+  (.. ^String (clojure.core/name text)
+    (replace "&"  "&amp;")
+    (replace "<"  "&lt;")
+    (replace ">"  "&gt;")
+    (replace "\"" "&quot;")))
+
+(defn xml-attribute [name value]
+  (str " " (clojure.core/name name) "=\"" (escape-html value) "\""))
+
+(defn render-attribute [[name value]]
+  (cond
+    (true? value) (str " " (clojure.core/name name))
+    (fn? value) ""
+    (not value) ""
+    :else (xml-attribute name value)))
+
+(defn render-attr-map [attrs]
+  (apply str
+         (clojure.core/map render-attribute (sort-by key attrs))))
+
+(def ^{:doc "A list of elements that must be rendered without a closing tag."
+       :private true}
+  void-tags
+  #{"area" "base" "br" "col" "command" "embed" "hr" "img" "input" "keygen" "link"
+    "meta" "param" "source" "track" "wbr"})
+
+(defn container-tag?
+  "Returns true if the tag has content or is not a void tag. In non-HTML modes,
+  all contentless tags are assumed to be void tags."
+  [tag content]
+  (or content
+    (and (not (void-tags tag)))))
+
+(defn render-element [{:keys [tag attrs children]}]
+  (if (container-tag? tag (seq children))
+    (str "<" tag (render-attr-map attrs) ">"
+         (apply str (clojure.core/map p/-render-to-string children))
+         "</" tag ">")
+    (str "<" tag (render-attr-map attrs) ">")))
+
+(defrecord Element [tag attrs children]
+  p/ReactDOMElement
+  (-render-to-string [this]
+    (render-element this)))
+
