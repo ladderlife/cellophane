@@ -1,6 +1,6 @@
 (ns cellophane.next-test
   (:require [clojure.test :refer [deftest testing is are]]
-            [cellophane.next :as om :refer [defui]]))
+            [cellophane.next :as cellophane :refer [defui]]))
 
 (defui SimpleComponent
   Object
@@ -10,10 +10,10 @@
     (dom/div nil "Hello World")))
 
 (defui ComponentWithStatics
-  static om/Ident
+  static cellophane/Ident
   (ident [this props]
     [:by-id 42])
-  static om/IQuery
+  static cellophane/IQuery
   (query [this]
     [:foo]))
 
