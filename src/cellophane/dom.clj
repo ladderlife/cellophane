@@ -185,13 +185,13 @@
     (str "<" tag (render-attr-map attrs) ">")))
 
 (defrecord Element [tag attrs children]
-  p/ReactDOMElement
+  p/IReactDOMElement
   (-children [this] children)
   (-render-to-string [this]
     (render-element this)))
 
 (defrecord Text [s]
-  p/ReactDOMElement
+  p/IReactDOMElement
   (-children [this]
     nil)
   (-render-to-string [this]
@@ -212,8 +212,8 @@
   (let [children (doall (->> (clojure.core/map
                                (fn [c]
                                  (cond
-                                   (satisfies? p/ReactDOMElement c) c
-                                   (satisfies? p/ReactComponent c) c
+                                   (satisfies? p/IReactDOMElement c) c
+                                   (satisfies? p/IReactComponent c) c
                                    (string? c) (text-node c)
                                    (nil? c) nil
                                    :else (do
@@ -238,6 +238,6 @@
 (gen-all-tags)
 
 (defn render-to-string [class]
-  {:pre [(satisfies? p/ReactComponent class)]}
+  {:pre [(satisfies? p/IReactComponent class)]}
   (let [element (p/-render class)]
     (p/-render-to-string element)))

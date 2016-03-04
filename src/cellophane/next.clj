@@ -58,10 +58,10 @@
        ([props# & children#]
         (reify
           ;; TODO: props & children
-          cellophane.protocols/ReactLifecycle
+          cellophane.protocols/IReactLifecycle
           ~@(rest dt)
           ~@(:protocols statics)
-          cellophane.protocols/ReactComponent
+          cellophane.protocols/IReactComponent
           (~'-render [this#]
            (.render this#)))))))
 
