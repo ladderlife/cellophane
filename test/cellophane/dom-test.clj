@@ -20,7 +20,12 @@
     ;; closing slash? e.g. "<input/>" vs "<input>"
     (test-tags container-tags #(str "<" % ">"))))
 
+(defn simple-component []
+  (dom/div nil "Hello World"))
+
 (deftest test-render-element
-  (testing "render element works with empty content in all tags"
+  (testing "render-element works with empty content in all tags"
     (test-container-tags)
-    (test-void-tags)))
+    (test-void-tags))
+  (testing "render-element renders simple function elements"
+    (is (= (dom/render-element (simple-component)) "<div>Hello World</div>"))))
