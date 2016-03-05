@@ -51,3 +51,11 @@
 (deftest test-render-defui
   (let [c (->SimpleComponent nil nil nil)]
     (is (= (dom/render-to-string c) "<div>Hello World</div>"))))
+
+
+;; ===================================================================
+;; Checksums, react-ids
+
+(deftest test-checksums
+  (are [markup chk] (= (dom/checksum markup) chk)
+    "<div data-reactid=\".18h0b0ubv28\"></div>" 34999398))
