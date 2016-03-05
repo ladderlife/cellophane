@@ -29,9 +29,7 @@
 (defn renderable? [x]
   (and (satisfies? p/IReactComponent x)
     (try
-      (do
-        (p/render x)
-        true)
+      (boolean (p/render x))
       (catch AbstractMethodError e
         false))))
 
