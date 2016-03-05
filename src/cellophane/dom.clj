@@ -170,16 +170,39 @@
 (defn xml-attribute [name value]
   (str " " (clojure.core/name name) "=\"" (escape-html value) "\""))
 
+(def no-suffix
+  #{"animationIterationCount" "boxFlex" "boxFlexGroup" "boxOrdinalGroup"
+    "columnCount" "fillOpacity" "flex" "flexGrow" "flexPositive" "flexShrink"
+    "flexNegative" "flexOrder" "fontWeight" "lineClamp" "lineHeight" "opacity"
+    "order" "orphans" "stopOpacity" "strokeDashoffset" "strokeOpacity"
+    "strokeWidth" "tabSize" "widows" "zIndex" "zoom"})
+
+(defn format-styles [styles]
+  (letfn [(->kebab-case [s]
+            (->> (str/split s #"(?=[A-Z])")
+              (clojure.core/map #(reduce str %))
+              (clojure.core/map str/lower-case)
+              (str/join "-")))
+          (coerce-value [k v]
+            (cond-> v
+              (and (number? v)
+                   (not (contains? no-suffix k))) (str "px")))]
+    (reduce (fn [s [k v]]
+              (let [k (name k)]
+                (str s (->kebab-case k) ":" (coerce-value k v) ";")))
+      "" styles)))
+
 (defn render-attribute [[name value]]
   (cond
     (true? value) (str " " (clojure.core/name name))
     (fn? value) ""
     (not value) ""
+    (= name :style) (xml-attribute name (format-styles value))
     :else (xml-attribute name value)))
 
 (defn render-attr-map [attrs]
   (apply str
-         (clojure.core/map render-attribute (sort-by key attrs))))
+    (clojure.core/map render-attribute (sort-by key attrs))))
 
 (def ^{:doc "A list of elements that must be rendered without a closing tag."
        :private true}

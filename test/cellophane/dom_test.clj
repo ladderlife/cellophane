@@ -94,6 +94,30 @@
                                 <div data-reactid=\".0.3\">Woz</div>
                               </div>")))))
 
+(def styles
+  #js {:textAlign "center"
+       :marginLeft "10px"})
+
+(defui ComponentWithStyle
+  Object
+  (render [this]
+    (dom/div #js {:style styles})))
+
+(deftest test-format-styles
+  (is (= (dom/format-styles (select-keys styles [:textAlign])) "text-align:center;"))
+  (is (= (dom/format-styles styles) "text-align:center;margin-left:10px;"))
+  (is (= (dom/format-styles {:zoom 1}) "zoom:1;"))
+  (is (= (dom/format-styles {:zoom 1
+                             :opacity 0.5
+                             :width 100}) "zoom:1;opacity:0.5;width:100px;")))
+
+
+
+(deftest test-render-component-with-style
+  (let [ctor (cellophane/factory ComponentWithStyle)]
+    (is (= (dom/render-to-str (ctor))
+          "<div data-reactid=\".0\" style=\"text-align:center;margin-left:10px;\"></div>"))))
+
 ;; ===================================================================
 ;; Checksums, react-ids
 
