@@ -32,5 +32,12 @@
       (is (cellophane/component? c))
       (is (not (cellophane/renderable? c))))))
 
-(deftest test-factory)
+(deftest test-factory
+  (let [simple-component-factory (cellophane/factory SimpleComponent)
+        c (simple-component-factory)]
+    (is (satisfies? p/IReactComponent c))
+    (is (= (cellophane/props c) nil))
+    (is (= (cellophane/props (simple-component-factory {:foo 1})) {:foo 1}))
+    (is (= (cellophane/children (simple-component-factory nil "some text"))
+          ["some text"]))))
 

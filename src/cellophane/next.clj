@@ -40,6 +40,13 @@
     (satisfies? p/IReactComponent x)
     false))
 
+(defn props [component]
+  {:pre [(component? component)]}
+  (p/-props component))
+
+(defn children [component]
+  {:pre [(component? component)]}
+  (p/-children component))
 
 (defn collect-statics [dt]
   (letfn [(split-on-static [forms]
@@ -68,7 +75,7 @@
 ;; TODO: probably need to reshape dt to implement defaults
 (defn defui* [name forms]
   (let [{:keys [dt statics]} (collect-statics forms)]
-    `(defrecord ~name [state# props# children#]
+    `(defrecord ~name [~'state props# children#]
        ;; TODO: props & children
        ;; TODO: non-lifecycle methods defined in the JS prototype
        cellophane.protocols/IReactLifecycle
@@ -98,12 +105,21 @@
    (factory class nil))
   ;; TODO: support key-fn etc.
   ([class {:keys [validator key-fn] :as opts}]
-   class
-   #_(fn self
+   {:pre [(class? class)]}
+   (fn self
      ([] (self nil))
      ([props & children]
-      ))
-   ))
+      (let [ctor (.getConstructor class
+                   (into-array java.lang.Class [java.lang.Object
+                                                java.lang.Object
+                                                java.lang.Object]))
+            component (.newInstance ctor (object-array [(atom nil) props children]))
+            init-state (try
+                         (.initLocalState component)
+                         (catch AbstractMethodError _))]
+        (when init-state
+          (reset! (:state component) init-state))
+        component)))))
 
 #_(defn add-root!
   ([reconciler root-class target]
