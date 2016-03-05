@@ -1,6 +1,22 @@
 (ns cellophane.dom
   (:refer-clojure :exclude [map meta time use])
-  (:require [cellophane.protocols :as p]))
+  (:require [cellophane.protocols :as p])
+  (:import [java.util.zip Adler32]))
+
+;; ===================================================================
+;; Checksums (data-react-checksum)
+
+;; Not equal to React's optimized version of adler32. See
+;; https://github.com/facebook/react/blob/3b96650/src/shared/utils/adler32.js
+(defn checksum [markup]
+  (let [chk (Adler32.)
+        bytes (.getBytes markup)]
+    (.update chk bytes 0 (count bytes))
+    (.getValue chk)))
+
+
+;; ===================================================================
+;; DOM render
 
 (def tags
   '[a
