@@ -1,7 +1,13 @@
 (ns cellophane.dom-test
   (:require [clojure.test :refer [deftest testing is are]]
+            [clojure.string :as str]
             [cellophane.next :as cellophane :refer [defui]]
             [cellophane.dom :as dom]))
+
+(defn- remove-whitespace [s]
+  (->> (str/split s #">\s+<")
+    (filter #(not (str/blank? %)))
+    (str/join "><")))
 
 (defn test-tags [tags res-fn]
   `(are [element# res#] (= (dom/render-element {:tag element# :react-id [0]}) res#)
@@ -40,8 +46,17 @@
   (testing "render-element renders simple function elements"
     (are [component res] (= (dom/render-element (dom/assign-react-ids component)) res)
       (simple-component) "<div data-reactid=\".0\">Hello World</div>"
-      (simple-nested-component) "<div data-reactid=\".0\"><h1 data-reactid=\".0.0\" id=\"page-title\">Title</h1></div>"
-      (comp-nested-component) "<div data-reactid=\".0\"><div data-reactid=\".0.0\">Hello World</div><div data-reactid=\".0.1\"><h1 data-reactid=\".0.1.0\" id=\"page-title\">Title</h1></div></div>")))
+      (simple-nested-component) (remove-whitespace
+                                  "<div data-reactid=\".0\">
+                                     <h1 data-reactid=\".0.0\" id=\"page-title\">Title</h1>
+                                   </div>")
+      (comp-nested-component) (remove-whitespace
+                                "<div data-reactid=\".0\">
+                                   <div data-reactid=\".0.0\">Hello World</div>
+                                   <div data-reactid=\".0.1\">
+                                     <h1 data-reactid=\".0.1.0\" id=\"page-title\">Title</h1>
+                                   </div>
+                                 </div>"))))
 
 (defui SimpleComponent
   Object
