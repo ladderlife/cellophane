@@ -237,7 +237,7 @@
 
 (gen-all-tags)
 
-(defn render-to-string [class]
+(defn render-to-str [class]
   {:pre [(satisfies? p/IReactComponent class)]}
   (let [element (p/-render class)]
     (p/-render-to-string element)))
