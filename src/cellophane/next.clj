@@ -46,6 +46,45 @@
   {:pre [(component? component)]}
   (p/-children component))
 
+(defn set-state!
+  [component new-state]
+  {:pre [(component? component)]}
+  (if (satisfies? ILocalState component)
+    (-set-state! component new-state)
+    (reset! (:state component) new-state)))
+
+(defn get-state
+  ([component]
+   (get-state component []))
+  ([component k-or-ks]
+   {:pre [(component? component)]}
+   (let [cst (if (satisfies? ILocalState component)
+               (-get-state component)
+               @(:state component))]
+     (get-in cst (if (sequential? k-or-ks) k-or-ks [k-or-ks])))))
+
+(defn update-state!
+  ([component f]
+   (set-state! component (f (get-state component))))
+  ([component f arg0]
+   (set-state! component (f (get-state component) arg0)))
+  ([component f arg0 arg1]
+   (set-state! component (f (get-state component) arg0 arg1)))
+  ([component f arg0 arg1 arg2]
+   (set-state! component (f (get-state component) arg0 arg1 arg2)))
+  ([component f arg0 arg1 arg2 arg3]
+   (set-state! component (f (get-state component) arg0 arg1 arg2 arg3)))
+  ([component f arg0 arg1 arg2 arg3 & arg-rest]
+   (set-state! component
+     (apply f (get-state component) arg0 arg1 arg2 arg3 arg-rest))))
+
+(defn get-rendered-state
+  [component]
+  {:pre [(component? component)]}
+  (if (satisfies? ILocalState component)
+    (-get-rendered-state component)
+    (get-state component)))
+
 (defn collect-statics [dt]
   (letfn [(split-on-static [forms]
             (split-with (complement '#{static}) forms))
