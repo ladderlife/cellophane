@@ -48,9 +48,17 @@
   (render [this]
     (dom/div nil "Hello World")))
 
+(defui Hello
+  Object
+  (render [this]
+    (dom/p nil (-> this cellophane/props :text))))
+
 (deftest test-render-to-str
   (let [c (->SimpleComponent nil nil nil)]
-    (is (= (dom/render-to-string c) "<div>Hello World</div>"))))
+    (is (= (dom/render-to-str c) "<div>Hello World</div>")))
+  (let [hello (cellophane/factory Hello)]
+    (is (= (dom/render-to-str (hello {:text "Hello, world!"}))
+           "<p>Hello, world!</p>"))))
 
 
 ;; ===================================================================
