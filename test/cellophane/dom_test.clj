@@ -94,6 +94,14 @@
                                 <div data-reactid=\".0.3\">Woz</div>
                               </div>")))))
 
+(deftest test-format-react-attrs
+  (are [map res] (= (dom/render-attr-map map) res)
+    {:htmlFor "something"} " for=\"something\""
+    {:className "foo"} " class=\"foo\""
+    {:srcLang "en"} " srclang=\"en\""
+    {:acceptCharset "ISO-8859-1"} " accept-charset=\"ISO-8859-1\""
+    {:placeholder "Title"} " placeholder=\"Title\""))
+
 (def styles
   #js {:textAlign "center"
        :marginLeft "10px"})
@@ -110,8 +118,6 @@
   (is (= (dom/format-styles {:zoom 1
                              :opacity 0.5
                              :width 100}) "zoom:1;opacity:0.5;width:100px;")))
-
-
 
 (deftest test-render-component-with-style
   (let [ctor (cellophane/factory ComponentWithStyle)]

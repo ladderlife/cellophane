@@ -156,6 +156,41 @@
     options
     select])
 
+(def no-suffix
+  #{"animationIterationCount" "boxFlex" "boxFlexGroup" "boxOrdinalGroup"
+    "columnCount" "fillOpacity" "flex" "flexGrow" "flexPositive" "flexShrink"
+    "flexNegative" "flexOrder" "fontWeight" "lineClamp" "lineHeight" "opacity"
+    "order" "orphans" "stopOpacity" "strokeDashoffset" "strokeOpacity"
+    "strokeWidth" "tabSize" "widows" "zIndex" "zoom"})
+
+(def lower-case-attrs
+  #{"accessKey" "allowFullScreen" "allowTransparency" "autoComplete"
+    "autoFocus" "autoPlay" "contentEditable" "contextMenu" "crossOrigin" 
+    "cellPadding" "cellSpacing" "charSet" "classID" "colSpan" "dateTime"
+    "encType" "formAction" "formEncType" "formMethod" "formNoValidate"
+    "formTarget" "frameBorder" "hrefLang" "inputMode" "keyParams"
+    "keyType" "marginHeight" "marginWidth" "maxLength" "mediaGroup"
+    "minLength" "noValidate" "radioGroup" "readOnly" "rowSpan"
+    "spellCheck" "srcDoc" "srcLang" "srcSet" "tabIndex" "useMap" })
+
+(def kebab-case-attrs
+  #{"acceptCharset" "httpEquiv"})
+
+(defn camel->kebab-case [s]
+  (->> (str/split s #"(?=[A-Z])")
+    (clojure.core/map #(reduce str %))
+    (clojure.core/map str/lower-case)
+    (str/join "-")))
+
+(defn coerce-attr-key [k]
+  (cond
+    (contains? lower-case-attrs k) (str/lower-case k)
+    (contains? kebab-case-attrs k) (camel->kebab-case k)
+    ;; special cases
+    (= k "className") "class"
+    (= k "htmlFor") "for"
+    :else k))
+
 (defn escape-html
   "Change special characters into HTML character entities."
   [text]
@@ -168,28 +203,17 @@
     (replace "\"" "&quot;")))
 
 (defn xml-attribute [name value]
-  (str " " (clojure.core/name name) "=\"" (escape-html value) "\""))
-
-(def no-suffix
-  #{"animationIterationCount" "boxFlex" "boxFlexGroup" "boxOrdinalGroup"
-    "columnCount" "fillOpacity" "flex" "flexGrow" "flexPositive" "flexShrink"
-    "flexNegative" "flexOrder" "fontWeight" "lineClamp" "lineHeight" "opacity"
-    "order" "orphans" "stopOpacity" "strokeDashoffset" "strokeOpacity"
-    "strokeWidth" "tabSize" "widows" "zIndex" "zoom"})
+  (let [name (coerce-attr-key (clojure.core/name name))]
+    (str " " name "=\"" (escape-html value) "\"")))
 
 (defn format-styles [styles]
-  (letfn [(->kebab-case [s]
-            (->> (str/split s #"(?=[A-Z])")
-              (clojure.core/map #(reduce str %))
-              (clojure.core/map str/lower-case)
-              (str/join "-")))
-          (coerce-value [k v]
+  (letfn [(coerce-value [k v]
             (cond-> v
               (and (number? v)
                    (not (contains? no-suffix k))) (str "px")))]
     (reduce (fn [s [k v]]
               (let [k (name k)]
-                (str s (->kebab-case k) ":" (coerce-value k v) ";")))
+                (str s (camel->kebab-case k) ":" (coerce-value k v) ";")))
       "" styles)))
 
 (defn render-attribute [[name value]]
