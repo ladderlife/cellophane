@@ -243,7 +243,7 @@
                                    (nil? c) nil
                                    :else (do
                                            (println "invalid child element:" c (class c))
-                                           (assert false)))) children)
+                                           (assert false)))) (flatten children))
                           (filter identity)))]
 
     (map->Element {:tag (name tag)

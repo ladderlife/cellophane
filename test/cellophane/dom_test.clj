@@ -68,13 +68,31 @@
   (render [this]
     (dom/p nil (-> this cellophane/props :text))))
 
+(defui Children
+  Object
+  (render [this]
+    (dom/div nil
+      (map identity
+        #js [(dom/div nil "Foo")
+             (dom/div nil "Bar")
+             (map identity
+               #js [(dom/div nil "Bar")
+                    (dom/div nil "Woz")])]))))
+
 (deftest test-render-to-str
   (let [c (->SimpleComponent nil nil nil)]
     (is (= (dom/render-to-str c) "<div data-reactid=\".0\">Hello World</div>")))
   (let [hello (cellophane/factory Hello)]
     (is (= (dom/render-to-str (hello {:text "Hello, world!"}))
-           "<p data-reactid=\".0\">Hello, world!</p>"))))
-
+           "<p data-reactid=\".0\">Hello, world!</p>")))
+  (let [children (cellophane/factory Children)]
+    (is (= (dom/render-to-str (children))
+          (remove-whitespace "<div data-reactid=\".0\">
+                                <div data-reactid=\".0.0\">Foo</div>
+                                <div data-reactid=\".0.1\">Bar</div>
+                                <div data-reactid=\".0.2\">Bar</div>
+                                <div data-reactid=\".0.3\">Woz</div>
+                              </div>")))))
 
 ;; ===================================================================
 ;; Checksums, react-ids
