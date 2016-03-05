@@ -50,20 +50,30 @@
             (recur nil dt' statics)))
         {:dt dt' :statics statics}))))
 
+;; TODO: probably need to reshape dt to implement defaults
 (defn defui* [name forms]
   (let [{:keys [dt statics]} (collect-statics forms)]
-    `(defn ~name
-       ([]
-        (~name nil))
-       ([props# & children#]
-        (reify
-          ;; TODO: props & children
-          cellophane.protocols/IReactLifecycle
-          ~@(rest dt)
-          ~@(:protocols statics)
-          cellophane.protocols/IReactComponent
-          (~'-render [this#]
-           (.render this#)))))))
+    `(defrecord ~name [state# props# children#]
+       ;; TODO: props & children
+       ;; TODO: non-lifecycle methods defined in the JS prototype
+       cellophane.protocols/IReactLifecycle
+       ~@(rest dt)
+
+       ~@(:protocols statics)
+
+       cellophane.protocols/IReactChildren
+       (~'-children [this#]
+         children#)
+
+       cellophane.protocols/IReactComponent
+       (~'-props [this#]
+        props#)
+       (~'-render [this#]
+        ;; TODO: circle back. where should this exception be caught?
+        (try
+          (p/render this#)
+          (catch AbstractMethodError e#
+            (println "abstrctmethoderror")))))))
 
 (defmacro defui [name & forms]
   (defui* name forms))

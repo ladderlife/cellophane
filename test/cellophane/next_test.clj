@@ -18,9 +18,11 @@
 
 (deftest test-defui
   (testing "defui definition works"
-    (is SimpleComponent))
+    (is SimpleComponent)
+    (is (class? SimpleComponent)))
   (testing "defui implements Lifecycle protocols"
-    (let [c (SimpleComponent)]
+    (let [c (->SimpleComponent nil nil nil)]
+      (is (cellophane/component? c))
       (is (= (.initLocalState c) {:foo 1}))))
   (testing "defui implements statics"
     (let [c (ComponentWithStatics)]
