@@ -2,7 +2,7 @@
   (:require [cellophane.protocols :as p]))
 
 ;; ===================================================================
-;; Protocols
+;; Query Protocols & Helpers
 
 (defprotocol Ident
   (ident [this props] "Return the ident for this component"))
@@ -24,7 +24,22 @@
   (-merge-pending-state! [this] "Get the component's pending local state"))
 
 ;; ===================================================================
-;; defui
+;; React bridging (defui, factory, props, state)
+
+(defn renderable? [x]
+  (and (satisfies? p/IReactComponent x)
+    (try
+      (do
+        (p/render x)
+        true)
+      (catch AbstractMethodError e
+        false))))
+
+(defn component? [x]
+  (if-not (nil? x)
+    (satisfies? p/IReactComponent x)
+    false))
+
 
 (defn collect-statics [dt]
   (letfn [(split-on-static [forms]

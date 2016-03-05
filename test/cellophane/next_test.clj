@@ -24,10 +24,13 @@
     (let [c (->SimpleComponent nil nil nil)]
       (is (cellophane/component? c))
       (is (= (.initLocalState c) {:foo 1}))))
-  (testing "defui implements statics"
-    (let [c (ComponentWithStatics)]
+  (let [c (->ComponentWithStatics nil nil nil)]
+    (testing "defui implements statics"
       (is (= (.query c) [:foo]))
-      (is (= (.ident c {}) [:by-id 42])))))
+      (is (= (.ident c {}) [:by-id 42])))
+    (testing "allow defui not to implement lifecycle render"
+      (is (cellophane/component? c))
+      (is (not (cellophane/renderable? c))))))
 
 (deftest test-factory)
 
