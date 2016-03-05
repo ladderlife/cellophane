@@ -1,6 +1,7 @@
 (ns cellophane.dom
   (:refer-clojure :exclude [map meta time use])
-  (:require [cellophane.protocols :as p])
+  (:require [clojure.string :as str]
+            [cellophane.protocols :as p])
   (:import [java.util.zip Adler32]))
 
 ;; ===================================================================
@@ -193,14 +194,22 @@
   (or content
     (and (not (void-tags tag)))))
 
-(defn render-element [{:keys [tag attrs children]}]
-  (if (container-tag? tag (seq children))
-    (str "<" tag (render-attr-map attrs) ">"
-         (apply str (clojure.core/map p/-render-to-string children))
-         "</" tag ">")
-    (str "<" tag (render-attr-map attrs) ">")))
+(defn react-id-str [react-id]
+  (assert (vector? react-id))
+  (str "." (str/join "." react-id)))
 
-(defrecord Element [tag attrs children]
+(defn render-element
+  "Render an tag vector as a HTML element string."
+  [{:keys [tag attrs react-id children]}]
+  (assert react-id)
+  (let [attrs (assoc attrs :data-reactid (react-id-str react-id))]
+    (if (container-tag? tag (seq children))
+      (str "<" tag (render-attr-map attrs) ">"
+        (apply str (clojure.core/map p/-render-to-string children))
+        "</" tag ">")
+      (str "<" tag (render-attr-map attrs) ">"))))
+
+(defrecord Element [tag attrs react-id children]
   p/IReactDOMElement
   (-render-to-string [this]
     (render-element this))
@@ -253,7 +262,19 @@
 
 (gen-all-tags)
 
+
+(defn assign-react-ids
+  ([elem]
+   (assign-react-ids elem [0]))
+  ([elem id]
+   (assert (vector? id))
+   (let [elem (assoc elem :react-id id)]
+     (update-in elem [:children] (fn [children]
+                                   (map-indexed (fn [i c]
+                                                  (assign-react-ids c (conj id i))) children))))))
+
 (defn render-to-str [class]
   {:pre [(satisfies? p/IReactComponent class)]}
-  (let [element (p/-render class)]
+  (let [element (p/-render class)
+        element (assign-react-ids element)]
     (p/-render-to-string element)))

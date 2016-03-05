@@ -4,14 +4,14 @@
             [cellophane.dom :as dom]))
 
 (defn test-tags [tags res-fn]
-  `(are [element# res#] (= (dom/render-element {:tag element#}) res#)
+  `(are [element# res#] (= (dom/render-element {:tag element# :react-id [0]}) res#)
      ~@(mapcat (fn [tag#] [tag# (res-fn tag#)]) tags)))
 
 (defmacro test-container-tags []
   (let [container-tags (->> dom/tags
                          (map str)
                          (filter #(dom/container-tag? % nil)))]
-    (test-tags container-tags #(str "<" % ">" "</" % ">"))))
+    (test-tags container-tags #(str "<" % " data-reactid=\".0\">" "</" % ">"))))
 
 (defmacro test-void-tags []
   (let [container-tags (->> dom/tags
@@ -19,7 +19,7 @@
                          (filter #(not (dom/container-tag? % nil))))]
     ;; TODO: should we add mode for XHTML in which tags need to have a
     ;; closing slash? e.g. "<input/>" vs "<input>"
-    (test-tags container-tags #(str "<" % ">"))))
+    (test-tags container-tags #(str "<" % " data-reactid=\".0\">"))))
 
 (defn simple-component []
   (dom/div nil "Hello World"))
@@ -38,10 +38,10 @@
     (test-container-tags)
     (test-void-tags))
   (testing "render-element renders simple function elements"
-    (are [component res] (= (dom/render-element component) res)
-      (simple-component) "<div>Hello World</div>"
-      (simple-nested-component) "<div><h1 id=\"page-title\">Title</h1></div>"
-      (comp-nested-component) "<div><div>Hello World</div><div><h1 id=\"page-title\">Title</h1></div></div>")))
+    (are [component res] (= (dom/render-element (dom/assign-react-ids component)) res)
+      (simple-component) "<div data-reactid=\".0\">Hello World</div>"
+      (simple-nested-component) "<div data-reactid=\".0\"><h1 data-reactid=\".0.0\" id=\"page-title\">Title</h1></div>"
+      (comp-nested-component) "<div data-reactid=\".0\"><div data-reactid=\".0.0\">Hello World</div><div data-reactid=\".0.1\"><h1 data-reactid=\".0.1.0\" id=\"page-title\">Title</h1></div></div>")))
 
 (defui SimpleComponent
   Object
@@ -55,10 +55,10 @@
 
 (deftest test-render-to-str
   (let [c (->SimpleComponent nil nil nil)]
-    (is (= (dom/render-to-str c) "<div>Hello World</div>")))
+    (is (= (dom/render-to-str c) "<div data-reactid=\".0\">Hello World</div>")))
   (let [hello (cellophane/factory Hello)]
     (is (= (dom/render-to-str (hello {:text "Hello, world!"}))
-           "<p>Hello, world!</p>"))))
+           "<p data-reactid=\".0\">Hello, world!</p>"))))
 
 
 ;; ===================================================================
