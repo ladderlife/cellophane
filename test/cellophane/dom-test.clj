@@ -49,5 +49,5 @@
     (dom/div nil "Hello World")))
 
 (deftest test-render-defui
-  (let [c (SimpleComponent)]
+  (let [c (->SimpleComponent nil nil nil)]
     (is (= (dom/render-to-string c) "<div>Hello World</div>"))))
