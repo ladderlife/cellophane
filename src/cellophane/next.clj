@@ -56,6 +56,30 @@
   {:pre [(component? component)]}
   (p/-props component))
 
+(defn computed
+  "Add computed properties to props."
+  [props computed-map]
+  (when-not (nil? props)
+    (if (vector? props)
+      (cond-> props
+        (not (empty? computed-map)) (vary-meta assoc :cellophane.next/computed computed-map))
+      (cond-> props
+        (not (empty? computed-map)) (assoc :cellophane.next/computed computed-map)))))
+
+(defn get-computed
+  "Return the computed properties on a component or its props."
+  ([x]
+   (get-computed x []))
+  ([x k-or-ks]
+   (when-not (nil? x)
+     (let [props (cond-> x (component? x) props)
+           ks    (into [:cellophane.next/computed]
+                   (cond-> k-or-ks
+                     (not (sequential? k-or-ks)) vector))]
+       (if (vector? props)
+         (-> props meta (get-in ks))
+         (get-in props ks))))))
+
 (defn children [component]
   {:pre [(component? component)]}
   (p/-children component))

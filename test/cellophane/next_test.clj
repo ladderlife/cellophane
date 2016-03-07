@@ -56,6 +56,14 @@
     (is (= (cellophane/children (simple-component-factory nil "some text"))
           ["some text"]))))
 
+(deftest test-computed-props
+  (is (= (cellophane/get-computed (cellophane/computed {} {:a 1}))
+         {:a 1}))
+  (is (= (cellophane/get-computed (cellophane/computed {:some :prop} {:a 1}))
+         {:a 1}))
+  (is (= (cellophane/computed {:some :prop} {:a 1})
+        {:cellophane.next/computed {:a 1} :some :prop})))
+
 (defui ComponentWithQPs
   static cellophane/IQueryParams
   (params [this]
