@@ -56,3 +56,14 @@
     (is (= (cellophane/children (simple-component-factory nil "some text"))
           ["some text"]))))
 
+(defui ComponentWithQuery
+  static cellophane/IQuery
+  (query [this]
+    [:foo :bar]))
+
+(deftest test-queries
+  (testing "iquery?"
+    (let [cq-factory (cellophane/factory ComponentWithQuery)
+          c (cq-factory)]
+      (is (cellophane/iquery? ComponentWithQuery))
+      (is (not (cellophane/iquery? SimpleComponent))))))

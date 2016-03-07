@@ -164,6 +164,15 @@
   ([reconciler root-class target options]
    ))
 
+;; ===================================================================
+;; Query implementations
+
+(defn iquery? [x]
+  (let [class (cond-> x (component? x) class)]
+    (extends? IQuery class)))
+
+
+
 (comment
   (defui* 'Artist
      '(static IQuery
