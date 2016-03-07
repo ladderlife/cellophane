@@ -1,5 +1,7 @@
 (ns cellophane.next
-  (:require [cellophane.protocols :as p]))
+  (:refer-clojure :exclude [var?])
+  (:require [cellophane.protocols :as p]
+            [clojure.walk :as walk]))
 
 ;; ===================================================================
 ;; Query Protocols & Helpers
@@ -22,6 +24,18 @@
   (-get-state [this] "Get the component's local state")
   (-get-rendered-state [this] "Get the component's rendered local state")
   (-merge-pending-state! [this] "Get the component's pending local state"))
+
+(defn- dispatch
+  "Helper function for implementing static `query` and `params` multimethods.
+   Dispatches on the (component) class"
+  [class] class)
+
+(defmulti class-query dispatch)
+
+(defmulti class-params dispatch)
+(defmethod class-params :default [_])
+
+(defmulti class-ident dispatch)
 
 ;; ===================================================================
 ;; React bridging (defui, factory, props, state)
@@ -111,28 +125,41 @@
 
 ;; TODO: probably need to reshape dt to implement defaults
 (defn defui* [name forms]
-  (let [{:keys [dt statics]} (collect-statics forms)]
-    `(defrecord ~name [~'state props# children#]
-       ;; TODO: props & children
-       ;; TODO: non-lifecycle methods defined in the JS prototype
-       cellophane.protocols/IReactLifecycle
-       ~@(rest dt)
+  (let [{:keys [dt statics]} (collect-statics forms)
+        define-class-methods (when-not (empty? (:protocols statics))
+                               `(do
+                                  ~@(->> (partition 2 (:protocols statics))
+                                      (filter (fn [[p _]]
+                                                (some #{(clojure.core/name p)}
+                                                  '#{"IQuery" "Ident" "IQueryParams"})))
+                                      (map
+                                        (fn [[_ impl]]
+                                          (cons 'defmethod
+                                            (cons (symbol (str "cellophane.next/class-" (first impl)))
+                                              (cons name (rest impl)))))))))]
+    `(do
+       (defrecord ~name [~'state props# children#]
+         ;; TODO: non-lifecycle methods defined in the JS prototype
+         cellophane.protocols/IReactLifecycle
+         ~@(rest dt)
 
-       ~@(:protocols statics)
+         ~@(:protocols statics)
 
-       cellophane.protocols/IReactChildren
-       (~'-children [this#]
-         children#)
+         cellophane.protocols/IReactChildren
+         (~'-children [this#]
+          children#)
 
-       cellophane.protocols/IReactComponent
-       (~'-props [this#]
-        props#)
-       (~'-render [this#]
-        ;; TODO: circle back. where should this exception be caught?
-        (try
-          (p/render this#)
-          (catch AbstractMethodError e#
-            (println "abstrctmethoderror")))))))
+         cellophane.protocols/IReactComponent
+         (~'-props [this#]
+          props#)
+         (~'-render [this#]
+          ;; TODO: circle back. where should this exception be caught?
+          (try
+            (p/render this#)
+            (catch AbstractMethodError e#
+              (println "abstrctmethoderror")))))
+
+       ~define-class-methods)))
 
 (defmacro defui [name & forms]
   (defui* name forms))
