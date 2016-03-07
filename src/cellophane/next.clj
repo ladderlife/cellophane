@@ -198,7 +198,53 @@
   (let [class (cond-> x (component? x) class)]
     (extends? IQuery class)))
 
+(defn- var? [x]
+  (and (symbol? x)
+       (.startsWith (str x) "?")))
 
+(defn- var->keyword [x]
+  (keyword (.substring (str x) 1)))
+
+(defn- replace-var [expr params]
+  (if (var? expr)
+    (get params (var->keyword expr) expr)
+    expr))
+
+(defn- bind-query [query params]
+   (letfn [(replace-var [expr]
+             (if (var? expr)
+               (get params (var->keyword expr) expr)
+               expr))]
+     (walk/prewalk replace-var query)))
+
+(defn- get-local-query-data [component]
+  ;; TODO: change when we implement `set-query!`
+  {:query  (query component)
+   :params (params component)})
+
+(defn get-unbound-query
+  "Return the unbound query for a component."
+  [component]
+  (:query (get-local-query-data component) (query component)))
+
+(defn get-params
+  "Return the query params for a component."
+  [component]
+  (:params (get-local-query-data component) (params component)))
+
+(defn- get-component-query [c]
+  (let [qps (get-local-query-data c)
+        q   (:query qps (query c))]
+    (bind-query q (:params qps (params c)))))
+
+(defn get-query
+  "Return a IQuery/IParams instance bound query. Works for component classes
+   and component instances. See also om.next/full-query."
+  [x]
+  (when (iquery? x)
+    (if (component? x)
+      (get-component-query x)
+      (bind-query (class-query x) (class-params x)))))
 
 (comment
   (defui* 'Artist

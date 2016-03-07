@@ -56,14 +56,34 @@
     (is (= (cellophane/children (simple-component-factory nil "some text"))
           ["some text"]))))
 
+(defui ComponentWithQPs
+  static cellophane/IQueryParams
+  (params [this]
+    {:a 1})
+  static cellophane/IQuery
+  (query [this]
+    '[:foo (:bar {:a ?a})]))
+
 (defui ComponentWithQuery
   static cellophane/IQuery
   (query [this]
     [:foo :bar]))
 
 (deftest test-queries
-  (testing "iquery?"
-    (let [cq-factory (cellophane/factory ComponentWithQuery)
-          c (cq-factory)]
-      (is (cellophane/iquery? ComponentWithQuery))
-      (is (not (cellophane/iquery? SimpleComponent))))))
+  (let [cqps-factory (cellophane/factory ComponentWithQPs)
+        cq-factory (cellophane/factory ComponentWithQuery)
+        cqps (cqps-factory)
+        cq (cq-factory)]
+    (testing "iquery?"
+      (is (cellophane/iquery? ComponentWithQPs))
+      (is (cellophane/iquery? cqps))
+      (is (not (cellophane/iquery? SimpleComponent))))
+    (testing "get-query"
+      (is (= (cellophane/get-query ComponentWithQPs)
+             '[:foo (:bar {:a 1})]))
+      (is (= (cellophane/get-query cqps)
+             '[:foo (:bar {:a 1})]))
+      (is (= (cellophane/get-query ComponentWithQuery)
+             [:foo :bar]))
+      (is (= (cellophane/get-query cq)
+             [:foo :bar])))))
