@@ -32,6 +32,13 @@
       (is (cellophane/component? c))
       (is (not (cellophane/renderable? c))))))
 
+(deftest test-component?-predicate
+  (let [simple-c-factory (cellophane/factory SimpleComponent)
+        c (simple-c-factory)]
+    (is (cellophane/component? c))
+    (is (not (cellophane/component? simple-c-factory)))
+    (is (not (cellophane/component? SimpleComponent)))))
+
 (deftest test-factory
   (let [simple-component-factory (cellophane/factory SimpleComponent)
         c (simple-component-factory)]
