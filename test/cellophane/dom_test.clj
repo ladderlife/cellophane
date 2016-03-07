@@ -124,6 +124,51 @@
     (is (= (dom/render-to-str (ctor))
           "<div data-reactid=\".0\" style=\"text-align:center;margin-left:10px;\"></div>"))))
 
+;; Om animals tutorial
+
+(def animals-state
+  {:app/title "Animals"
+   :animals/list
+   [[1 "Ant"] [2 "Antelope"] [3 "Bird"] [4 "Cat"] [5 "Dog"]
+    [6 "Lion"] [7 "Mouse"] [8 "Monkey"] [9 "Snake"] [10 "Zebra"]]})
+
+(defui AnimalsList
+  static cellophane/IQueryParams
+  (params [this]
+    {:start 0 :end 10})
+  static cellophane/IQuery
+  (query [this]
+    '[:app/title (:animals/list {:start ?start :end ?end})])
+  Object
+  (render [this]
+    (let [{:keys [app/title animals/list]} (cellophane/props this)]
+      (dom/div nil
+        (dom/h2 nil title)
+        (apply dom/ul nil
+          (map
+            (fn [[i name]]
+              (dom/li nil (str i ". " name)))
+            list))))))
+
+(deftest test-render-animals-tutorial
+  (let [ctor (cellophane/factory AnimalsList)]
+    (is (= (dom/render-to-str (ctor animals-state))
+           (remove-whitespace "<div data-reactid=\".0\">
+                                 <h2 data-reactid=\".0.0\">Animals</h2>
+                                 <ul data-reactid=\".0.1\">
+                                   <li data-reactid=\".0.1.0\">1. Ant</li>
+                                   <li data-reactid=\".0.1.1\">2. Antelope</li>
+                                   <li data-reactid=\".0.1.2\">3. Bird</li>
+                                   <li data-reactid=\".0.1.3\">4. Cat</li>
+                                   <li data-reactid=\".0.1.4\">5. Dog</li>
+                                   <li data-reactid=\".0.1.5\">6. Lion</li>
+                                   <li data-reactid=\".0.1.6\">7. Mouse</li>
+                                   <li data-reactid=\".0.1.7\">8. Monkey</li>
+                                   <li data-reactid=\".0.1.8\">9. Snake</li>
+                                   <li data-reactid=\".0.1.9\">10. Zebra</li>
+                                 </ul>
+                               </div>")))))
+
 ;; ===================================================================
 ;; Checksums, react-ids
 
