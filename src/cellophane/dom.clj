@@ -256,7 +256,7 @@
         "</" tag ">")
       (str "<" tag (render-attr-map attrs) ">"))))
 
-(defrecord Element [tag attrs react-id children]
+(defrecord Element [tag attrs react-id react-key children]
   p/IReactDOMElement
   (-render-to-string [this]
     (render-element this))
@@ -285,14 +285,17 @@
                                (fn [c]
                                  (cond
                                    (satisfies? p/IReactDOMElement c) c
-                                   (satisfies? p/IReactComponent c) (p/-render c)
+
+                                   (satisfies? p/IReactComponent c)
+                                   (assoc (p/-render c) :react-key
+                                     (some-> (p/-props c) :cellophaneclj$reactKey))
+
                                    (string? c) (text-node c)
                                    (nil? c) nil
                                    :else (do
                                            (println "invalid child element:" c (class c))
                                            (assert false)))) (flatten children))
                           (filter identity)))]
-
     (map->Element {:tag (name tag)
                    :attrs attrs
                    :children children})))

@@ -1,6 +1,7 @@
 (ns cellophane.next-test
   (:require [clojure.test :refer [deftest testing is are]]
             [cellophane.next :as cellophane :refer [defui]]
+            [cellophane.dom :as dom]
             [cellophane.protocols :as p]))
 
 (defui SimpleComponent
@@ -39,6 +40,30 @@
     (is (not (cellophane/component? simple-c-factory)))
     (is (not (cellophane/component? SimpleComponent)))))
 
+(defui ReactKeysChild
+  static cellophane/IQuery
+  (query [this]
+    [:name])
+  Object
+  (render [this]
+    (let [p (cellophane/props this)]
+      (dom/div nil (:name p)))))
+
+(def react-keys-child-factory (cellophane/factory ReactKeysChild))
+
+(defui ReactKeysParent
+  static cellophane/IQuery
+  (query [this]
+    [{:children (cellophane/get-query ReactKeysChild)}])
+  Object
+  (render [this]
+    (let [children (:children (cellophane/props this))]
+      (dom/div nil
+        (map react-keys-child-factory children)))))
+
+(def react-keys-state
+  {:children [{:name "John"} {:name "Mary"}]})
+
 (deftest test-factory
   (let [simple-component-factory (cellophane/factory SimpleComponent)
         c (simple-component-factory)]
@@ -54,7 +79,14 @@
     (is (= (cellophane/props c) nil))
     (is (= (cellophane/props (simple-component-factory {:foo 1})) {:foo 1}))
     (is (= (cellophane/children (simple-component-factory nil "some text"))
-          ["some text"]))))
+          ["some text"]))
+    (testing "react keys"
+      (let [c (simple-component-factory {:react-key "foo"})
+            rks-factory (cellophane/factory ReactKeysParent)
+            rks-c (rks-factory react-keys-state)]
+        (is (= (cellophane/react-key c) "foo"))
+        (is (= (-> (p/-render rks-c)
+                 :children first :react-key) "cellophane$next_test$ReactKeysChild_[:children 0]"))))))
 
 (deftest test-computed-props
   (is (= (cellophane/get-computed (cellophane/computed {} {:a 1}))
@@ -62,7 +94,7 @@
   (is (= (cellophane/get-computed (cellophane/computed {:some :prop} {:a 1}))
          {:a 1}))
   (is (= (cellophane/computed {:some :prop} {:a 1})
-        {:cellophane.next/computed {:a 1} :some :prop})))
+         {:cellophane.next/computed {:a 1} :some :prop})))
 
 (defui ComponentWithQPs
   static cellophane/IQueryParams

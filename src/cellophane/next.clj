@@ -1,6 +1,8 @@
 (ns cellophane.next
   (:refer-clojure :exclude [var?])
   (:require [cellophane.protocols :as p]
+            [clojure.reflect :as reflect]
+            [clojure.string :as str]
             [clojure.walk :as walk]))
 
 ;; ===================================================================
@@ -54,7 +56,7 @@
 
 (defn props [component]
   {:pre [(component? component)]}
-  (p/-props component))
+  (:cellophaneclj$value (p/-props component)))
 
 (defn computed
   "Add computed properties to props."
@@ -188,26 +190,63 @@
 (defmacro defui [name & forms]
   (defui* name forms))
 
+(defn- munge-component-name [x]
+  (let [cl (reflect/typename (cond-> x (component? x) class))
+        [ns-name cl-name] (str/split cl #"\.(?=[^.]*$)")]
+    (munge
+      (str (str/replace (str ns-name) "." "$") "$" cl-name))))
+
+(defn- compute-react-key [cl props]
+  (when-let [idx (-> props meta :om-path)]
+    (str (munge-component-name cl) "_" idx)))
+
+(defn- path-meta
+  [x path]
+  (let [x' (cond->> x
+             (map? x) (into {} (map (fn [[k v]] [k (path-meta v (conj path k))])))
+             (vector? x) (into [] (map-indexed #(path-meta %2 (conj path %1)))))]
+    (cond-> x'
+      (instance? clojure.lang.IObj x')
+      (vary-meta assoc :om-path path))))
+
+(declare iquery?)
+
 (defn factory
   ([class]
    (factory class nil))
-  ;; TODO: support key-fn etc.
-  ([class {:keys [validator key-fn] :as opts}]
+  ;; TODO: support validator
+  ([class {:keys [validator keyfn] :as opts}]
    {:pre [(class? class)]}
    (fn self
      ([] (self nil))
      ([props & children]
-      (let [ctor (.getConstructor class
-                   (into-array java.lang.Class [java.lang.Object
-                                                java.lang.Object
-                                                java.lang.Object]))
-            component (.newInstance ctor (object-array [(atom nil) props children]))
+      ;; setting path-meta here works because props are fed to factory
+      ;; from the root
+      (let [root? (nil? (meta props))
+            props (cond-> props
+                    (and (iquery? class) root?) (path-meta []))
+            react-key (cond
+                        (some? keyfn) (keyfn props)
+                        (some? (:react-key props)) (:react-key props)
+                        :else (when-not root?
+                                (compute-react-key class props)))
+            ctor (.getConstructor class
+                   (into-array java.lang.Class
+                     (take 3 (repeat java.lang.Object))))
+            props {:cellophaneclj$value props
+                   :cellophaneclj$reactKey react-key}
+            component (.newInstance ctor
+                        (object-array [(atom nil) props children]))
             init-state (try
                          (.initLocalState component)
                          (catch AbstractMethodError _))]
         (when init-state
           (reset! (:state component) init-state))
         component)))))
+
+(defn react-key [component]
+  {:pre [(component? component)]}
+  (get (p/-props component) :cellophaneclj$reactKey))
 
 #_(defn add-root!
   ([reconciler root-class target]
