@@ -285,7 +285,7 @@
                                (fn [c]
                                  (cond
                                    (satisfies? p/IReactDOMElement c) c
-                                   (satisfies? p/IReactComponent c) c
+                                   (satisfies? p/IReactComponent c) (p/-render c)
                                    (string? c) (text-node c)
                                    (nil? c) nil
                                    :else (do

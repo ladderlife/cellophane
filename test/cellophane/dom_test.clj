@@ -169,6 +169,28 @@
                                  </ul>
                                </div>")))))
 
+;; Simple nested `defui`s
+
+(defui SimpleNestedChild
+  Object
+  (render [this]
+    (dom/div nil "child")))
+
+(def simple-nested-child-factory (cellophane/factory SimpleNestedChild))
+
+(defui SimpleNestedParent
+  Object
+  (render [this]
+    (dom/div nil
+      (simple-nested-child-factory))))
+
+(deftest test-simple-nested-defuis
+  (let [ctor (cellophane/factory SimpleNestedParent)]
+    (is (= (dom/render-to-str (ctor))
+           (remove-whitespace "<div data-reactid=\".0\">
+                                 <div data-reactid=\".0.0\">child</div>
+                               </div>")))))
+
 ;; ===================================================================
 ;; Checksums, react-ids
 
