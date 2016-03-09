@@ -7,6 +7,11 @@
             [om.tempid :as tempid]
             [om.transit :as transit]))
 
+;; =============================================================================
+;; Globals & Dynamics
+
+(def ^{:dynamic true :private true} *parent* nil)
+
 ;; ===================================================================
 ;; Query Protocols & Helpers
 
@@ -151,6 +156,39 @@
             (recur nil dt' statics)))
         {:dt dt' :statics statics}))))
 
+(def reshape-map
+  {:reshape
+   {'render
+    (fn [[name [this :as args] & body]]
+      `(~name [this#]
+         (let [~this this#]
+           (binding [;om.next/*reconciler* (om.next/get-reconciler this#)
+                     ;om.next/*depth*      (inc (om.next/depth this#))
+                     ;om.next/*shared*     (om.next/shared this#)
+                     ;om.next/*instrument* (om.next/instrument this#)
+                     cellophane.next/*parent* this#]
+            ~@body))))}})
+
+(defn reshape [dt {:keys [reshape defaults]}]
+  (letfn [(reshape* [x]
+            (if (and (sequential? x)
+                     (contains? reshape (first x)))
+              (let [reshapef (get reshape (first x))]
+                (reshapef x))
+              x))
+          (add-defaults-step [ret [name impl]]
+            (if-not (some #{name} (map first (filter seq? ret)))
+              (let [[before [p & after]] (split-with (complement '#{Object}) ret)]
+                (into (conj (vec before) p (cons name impl)) after))
+              ret))
+          (add-defaults [dt]
+            (reduce add-defaults-step dt defaults))
+          (add-object-protocol [dt]
+            (if-not (some '#{Object} dt)
+              (conj dt 'Object)
+              dt))]
+    (->> dt (map reshape*) vec add-object-protocol add-defaults)))
+
 ;; TODO: probably need to reshape dt to implement defaults
 (defn defui* [name forms]
   (let [{:keys [dt statics]} (collect-statics forms)
@@ -166,10 +204,10 @@
                                             (cons (symbol (str "cellophane.next/class-" (first impl)))
                                               (cons name (rest impl)))))))))]
     `(do
-       (defrecord ~name [~'state props# children#]
+       (defrecord ~name [~'state ~'refs props# children#]
          ;; TODO: non-lifecycle methods defined in the JS prototype
          cellophane.protocols/IReactLifecycle
-         ~@(rest dt)
+         ~@(rest (reshape dt reshape-map))
 
          ~@(:protocols statics)
 
@@ -234,17 +272,30 @@
                                 (compute-react-key class props)))
             ctor (.getConstructor class
                    (into-array java.lang.Class
-                     (take 3 (repeat java.lang.Object))))
-            props {:cellophaneclj$value props
-                   :cellophaneclj$reactKey react-key}
+                     (take 4 (repeat java.lang.Object))))
+            ref (:ref props)
+            props {:cellophaneclj$reactRef ref
+                   :cellophaneclj$reactKey react-key
+                   :cellophaneclj$parent *parent*
+                   :cellophaneclj$value (dissoc props :ref)}
             component (.newInstance ctor
-                        (object-array [(atom nil) props children]))
+                                    ;;   state      refs
+                        (object-array [(atom nil) (atom nil) props children]))
             init-state (try
                          (.initLocalState component)
                          (catch AbstractMethodError _))]
+        (when ref
+          (assert (some? *parent*))
+          (swap! (:refs *parent*) assoc ref component))
         (when init-state
           (reset! (:state component) init-state))
         component)))))
+
+(defn- parent
+  "Returns the parent Om component."
+  [component]
+  {:pre [(component? component)]}
+  (-> component p/-props :cellophaneclj$parent))
 
 (defn react-key [component]
   {:pre [(component? component)]}
@@ -253,6 +304,11 @@
 (defn react-type [component]
   {:pre [(component? component)]}
   (type component))
+
+(defn react-ref [component name]
+  {:pre [(component? component)]}
+  (p/-render component)
+  (some-> @(:refs component) (get name)))
 
 #_(defn add-root!
   ([reconciler root-class target]

@@ -24,10 +24,10 @@
     (is SimpleComponent)
     (is (class? SimpleComponent)))
   (testing "defui implements Lifecycle protocols"
-    (let [c (->SimpleComponent nil nil nil)]
+    (let [c (->SimpleComponent nil nil nil nil)]
       (is (cellophane/component? c))
       (is (= (.initLocalState c) {:foo 1}))))
-  (let [c (->ComponentWithStatics nil nil nil)]
+  (let [c (->ComponentWithStatics nil nil nil nil)]
     (testing "defui implements statics"
       (is (= (.query c) [:foo]))
       (is (= (.ident c {}) [:by-id 42])))
@@ -159,3 +159,23 @@
   (let [factory (cellophane/factory ComponentWithIdent)
         c (factory {:id 3})]
     (is (= (cellophane/get-ident c) [:item/by-id 3]))))
+
+(defui ReactRefsChild
+  Object
+  (render [this]
+    (dom/div nil "some text")))
+
+(def child-factory (cellophane/factory ReactRefsChild))
+
+(defui ReactRefsParent
+  Object
+  (render [this]
+    (dom/div nil
+      (child-factory {:ref "foo"}))))
+
+(deftest test-react-refs
+  (let [factory (cellophane/factory ReactRefsParent)
+        c (factory)]
+    (is (= (cellophane/react-type
+             (cellophane/react-ref c "foo"))
+           ReactRefsChild))))
