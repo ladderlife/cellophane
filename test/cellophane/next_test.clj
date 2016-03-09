@@ -146,3 +146,16 @@
     (is (= (cellophane/tempid? id0)))
     (is (= id0 id1))
     (is (= (hash id0) (hash id1)))))
+
+(defui ComponentWithIdent
+  static cellophane/Ident
+  (ident [this {:keys [id]}]
+    [:item/by-id id]))
+
+(deftest test-get-ident
+  (let [factory (cellophane/factory ComponentWithStatics)
+        c (factory {})]
+    (is (= (cellophane/get-ident c) [:by-id 42])))
+  (let [factory (cellophane/factory ComponentWithIdent)
+        c (factory {:id 3})]
+    (is (= (cellophane/get-ident c) [:item/by-id 3]))))

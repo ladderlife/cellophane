@@ -315,6 +315,12 @@
       (get-component-query x)
       (bind-query (class-query x) (class-params x)))))
 
+(defn get-ident [c]
+  {:pre [(component? c)]}
+  (let [m (props c)]
+    (assert (not (nil? m)) "get-ident invoked on component with nil props")
+    (ident c m)))
+
 ;; ===================================================================
 
 (defn tempid
