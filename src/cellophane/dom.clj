@@ -312,16 +312,29 @@
 
 (gen-all-tags)
 
+(def key-escape-lookup
+  {"=" "=0"
+   ":" "=2"})
+
+;; https://github.com/facebook/react/blob/bef45/src/shared/utils/traverseAllChildren.js
+(defn wrap-user-provided-key [key]
+  (when key
+    (str "$" (str/replace key #"[=:]" key-escape-lookup))))
 
 (defn assign-react-ids
   ([elem]
-   (assign-react-ids elem [0]))
+   (let [id (or (wrap-user-provided-key (:react-key elem))
+              0)]
+     (assign-react-ids elem [id])))
   ([elem id]
    (assert (vector? id))
    (let [elem (assoc elem :react-id id)]
-     (update-in elem [:children] (fn [children]
-                                   (map-indexed (fn [i c]
-                                                  (assign-react-ids c (conj id i))) children))))))
+     (update-in elem [:children]
+       (fn [children]
+         (map-indexed (fn [i c]
+                        (let [react-id (or (wrap-user-provided-key (:react-key c))
+                                         i)]
+                          (assign-react-ids c (conj id react-id)))) children))))))
 
 (defn render-to-str [class]
   {:pre [(satisfies? p/IReactComponent class)]}

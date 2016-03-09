@@ -191,6 +191,67 @@
                                  <div data-reactid=\".0.0\">child</div>
                                </div>")))))
 
+
+;; Om Simple Recursive Tree
+
+(declare simple-node)
+
+(defui SimpleNode
+  static cellophane/IQuery
+  (query [this]
+    '[:node-value {:children ...}])
+  Object
+  (render [this]
+    (let [{:keys [node-value children]} (cellophane/props this)]
+      (dom/li nil
+        (dom/div nil (str "Node value:" node-value))
+        (dom/ul nil
+          (map simple-node children))))))
+
+(def simple-node (cellophane/factory SimpleNode))
+
+(defui SimpleTree
+  static cellophane/IQuery
+  (query [this]
+    [{:tree (cellophane/get-query SimpleNode)}])
+  Object
+  (render [this]
+    (let [{:keys [tree]} (cellophane/props this)]
+      (dom/ul nil
+        (simple-node tree)))))
+
+(def simple-tree-data
+  {:tree {:node-value 1
+          :children [{:node-value 2
+                      :children [{:node-value 3
+                                  :children []}]}
+                     {:node-value 4
+                      :children []}]}})
+
+(deftest test-render-simple-recursive-example
+  (let [ctor (cellophane/factory SimpleTree)]
+    (is (= (dom/render-to-str (ctor simple-tree-data))
+          (remove-whitespace "<ul data-reactid=\".0\">
+                                <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree]\">
+                                  <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].0\">Node value:1</div>
+                                  <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1\">
+                                    <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0]\">
+                                      <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].0\">Node value:2</div>
+                                      <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1\">
+                                        <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0]\">
+                                          <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].0\">Node value:3</div>
+                                          <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].1\"></ul>
+                                        </li>
+                                      </ul>
+                                    </li>
+                                    <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1]\">
+                                      <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].0\">Node value:4</div>
+                                      <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].1\"></ul>
+                                    </li>
+                                  </ul>
+                                </li>
+                              </ul>")))))
+
 ;; ===================================================================
 ;; Checksums, react-ids
 
