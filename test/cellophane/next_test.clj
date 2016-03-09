@@ -138,3 +138,11 @@
              '[:foo (:bar {:a ?a})]))
       (is (= (cellophane/get-params cqps)
              {:a 1})))))
+
+(deftest test-temp-id-equality
+  (let [uuid (java.util.UUID/randomUUID)
+        id0  (cellophane/tempid uuid)
+        id1  (cellophane/tempid uuid)]
+    (is (= (cellophane/tempid? id0)))
+    (is (= id0 id1))
+    (is (= (hash id0) (hash id1)))))
