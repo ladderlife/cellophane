@@ -252,6 +252,29 @@
                                 </li>
                               </ul>")))))
 
+(defn MultipleTextChildren []
+  (dom/div nil
+    "Some text"
+    "More text"))
+
+(defn ChildAndText []
+  (dom/div nil
+    (dom/p nil "A paragraph!")
+    "More text"))
+
+(deftest test-render-multiple-text-children
+  (testing "rendering an element with multiple children converts text nodes to <span>"
+    (are [comp res] (= (dom/render-element (dom/assign-react-ids (comp)))
+                      (remove-whitespace res))
+      MultipleTextChildren "<div data-reactid=\".0\">
+                              <span data-reactid=\".0.0\">Some text</span>
+                              <span data-reactid=\".0.1\">More text</span>
+                            </div>"
+      ChildAndText "<div data-reactid=\".0\">
+                      <p data-reactid=\".0.0\">A paragraph!</p>
+                      <span data-reactid=\".0.1\">More text</span>
+                    </div>")))
+
 ;; ===================================================================
 ;; Checksums, react-ids
 

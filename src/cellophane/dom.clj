@@ -275,13 +275,17 @@
   [s]
   (map->Text {:s s}))
 
+(declare span)
+
 (defn element
   "Creates a dom node."
   [{:keys [tag attrs children] :as elem}]
                                         ;{:post [(valid-element? %)]}
   (assert (name tag))
   (assert (or (nil? attrs) (map? attrs)) (format "elem %s attrs invalid" elem))
-  (let [children (doall (->> (clojure.core/map
+  (let [children (flatten children)
+        child-node-count (count children)
+        children (doall (->> (clojure.core/map
                                (fn [c]
                                  (cond
                                    (satisfies? p/IReactDOMElement c) c
@@ -290,11 +294,14 @@
                                    (assoc (p/-render c) :react-key
                                      (some-> (p/-props c) :cellophaneclj$reactKey))
 
-                                   (string? c) (text-node c)
+                                   (string? c)
+                                   (if (> child-node-count 1)
+                                     (span nil c)
+                                     (text-node c))
                                    (nil? c) nil
                                    :else (do
                                            (println "invalid child element:" c (class c))
-                                           (assert false)))) (flatten children))
+                                           (assert false)))) children)
                           (filter identity)))]
     (map->Element {:tag (name tag)
                    :attrs attrs
