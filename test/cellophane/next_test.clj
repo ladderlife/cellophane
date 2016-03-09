@@ -9,6 +9,8 @@
   (initLocalState [this]
     {:foo 1}))
 
+(def simple-component-factory (cellophane/factory SimpleComponent))
+
 (defui ComponentWithStatics
   static cellophane/Ident
   (ident [this props]
@@ -64,29 +66,32 @@
 (def react-keys-state
   {:children [{:name "John"} {:name "Mary"}]})
 
-(deftest test-factory
-  (let [simple-component-factory (cellophane/factory SimpleComponent)
-        c (simple-component-factory)]
-    (is (satisfies? p/IReactComponent c))
-    (is (= (cellophane/get-state c) {:foo 1}))
-    (is (= (cellophane/get-state c :foo) 1))
-    (is (= (cellophane/get-state c [:foo]) 1))
-    (is (= (cellophane/get-state c) (cellophane/get-rendered-state c)))
-    (cellophane/set-state! c {:bar 1})
-    (is (= (cellophane/get-state c) {:bar 1}))
-    (cellophane/update-state! c #(update-in % [:bar] inc))
-    (is (= (cellophane/get-state c) {:bar 2}))
-    (is (= (cellophane/props c) nil))
-    (is (= (cellophane/props (simple-component-factory {:foo 1})) {:foo 1}))
-    (is (= (cellophane/children (simple-component-factory nil "some text"))
-          ["some text"]))
-    (testing "react keys"
-      (let [c (simple-component-factory {:react-key "foo"})
-            rks-factory (cellophane/factory ReactKeysParent)
-            rks-c (rks-factory react-keys-state)]
-        (is (= (cellophane/react-key c) "foo"))
-        (is (= (-> (p/-render rks-c)
-                 :children first :react-key) "cellophane$next_test$ReactKeysChild_[:children 0]"))))))
+(deftest test-react-bridging
+  (testing "factory, state, props, children"
+    (let [c (simple-component-factory)]
+      (is (satisfies? p/IReactComponent c))
+      (is (= (cellophane/get-state c) {:foo 1}))
+      (is (= (cellophane/get-state c :foo) 1))
+      (is (= (cellophane/get-state c [:foo]) 1))
+      (is (= (cellophane/get-state c) (cellophane/get-rendered-state c)))
+      (cellophane/set-state! c {:bar 1})
+      (is (= (cellophane/get-state c) {:bar 1}))
+      (cellophane/update-state! c #(update-in % [:bar] inc))
+      (is (= (cellophane/get-state c) {:bar 2}))
+      (is (= (cellophane/props c) nil))
+      (is (= (cellophane/props (simple-component-factory {:foo 1})) {:foo 1}))
+      (is (= (cellophane/children (simple-component-factory nil "some text"))
+            ["some text"]))))
+  (testing "react keys"
+    (let [c (simple-component-factory {:react-key "foo"})
+          rks-factory (cellophane/factory ReactKeysParent)
+          rks-c (rks-factory react-keys-state)]
+      (is (= (cellophane/react-key c) "foo"))
+      (is (= (-> (p/-render rks-c)
+               :children first :react-key) "cellophane$next_test$ReactKeysChild_[:children 0]"))))
+  (testing "react type"
+    (let [c (simple-component-factory)]
+      (is (= (cellophane/react-type c) SimpleComponent)))))
 
 (deftest test-computed-props
   (is (= (cellophane/get-computed (cellophane/computed {} {:a 1}))

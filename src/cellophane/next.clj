@@ -248,6 +248,10 @@
   {:pre [(component? component)]}
   (get (p/-props component) :cellophaneclj$reactKey))
 
+(defn react-type [component]
+  {:pre [(component? component)]}
+  (type component))
+
 #_(defn add-root!
   ([reconciler root-class target]
    (add-root! reconciler root-class target nil))
