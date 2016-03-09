@@ -179,3 +179,27 @@
     (is (= (cellophane/react-type
              (cellophane/react-ref c "foo"))
            ReactRefsChild))))
+
+(defui ClassPathChild
+  static cellophane/IQuery
+  (query [this]
+    [:foo :bar])
+  Object
+  (render [this]
+    (dom/div nil "stuff")))
+
+(def class-path-child-factory (cellophane/factory ClassPathChild))
+
+(defui ClassPathParent
+  static cellophane/IQuery
+  (query [this]
+    [{:child (cellophane/get-query ClassPathChild)}])
+  Object
+  (render [this]
+    (class-path-child-factory {:ref "child"})))
+
+(deftest test-class-path
+  (let [factory (cellophane/factory ClassPathParent)
+        c (factory)]
+    (is (= (cellophane/class-path (cellophane/react-ref c "child"))
+           [ClassPathParent ClassPathChild]))))

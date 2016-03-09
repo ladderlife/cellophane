@@ -310,6 +310,22 @@
   (p/-render component)
   (some-> @(:refs component) (get name)))
 
+(defn class-path [c]
+  "Return the component class path associated with a component."
+  {:pre [(component? c)]}
+  (loop [c c ret (list (type c))]
+    (if-let [p (parent c)]
+      (if (iquery? p)
+        (recur p (cons (type p) ret))
+        (recur p ret))
+      (let [seen (atom #{})]
+        (take-while
+          (fn [x]
+            (when-not (contains? @seen x)
+              (swap! seen conj x)
+              x))
+          ret)))))
+
 #_(defn add-root!
   ([reconciler root-class target]
    (add-root! reconciler root-class target nil))
