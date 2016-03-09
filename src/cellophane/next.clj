@@ -1,9 +1,11 @@
 (ns cellophane.next
-  (:refer-clojure :exclude [var?])
+  (:refer-clojure :exclude [var? force])
   (:require [cellophane.protocols :as p]
             [clojure.reflect :as reflect]
             [clojure.string :as str]
-            [clojure.walk :as walk]))
+            [clojure.walk :as walk]
+            [om.tempid :as tempid]
+            [om.transit :as transit]))
 
 ;; ===================================================================
 ;; Query Protocols & Helpers
@@ -313,10 +315,43 @@
       (get-component-query x)
       (bind-query (class-query x) (class-params x)))))
 
+;; ===================================================================
+
+(defn tempid
+  "Return a temporary id."
+  ([] (tempid/tempid))
+  ([id] (tempid/tempid id)))
+
+(defn ^boolean tempid?
+  "Return true if x is a tempid, false otherwise"
+  [x]
+  (tempid/tempid? x))
+
+(defn reader
+  "Create a Om Next transit reader. This reader can handler the tempid type.
+   Can pass transit reader customization opts map."
+  ([] (transit/reader))
+  ([opts] (transit/reader opts)))
+
+(defn writer
+  "Create a Om Next transit writer. This writer can handler the tempid type.
+   Can pass transit writer customization opts map."
+  ([] (transit/writer))
+  ([opts] (transit/writer opts)))
+
+(defn force
+  "Given a query expression return an equivalent query expression that can be
+   spliced into a transaction that will force a read of that key from the
+   specified remote target."
+  ([expr]
+    (force expr :remote))
+  ([expr target]
+    (with-meta (list 'quote expr) {:target target})))
+
+
 (comment
   (defui* 'Artist
-     '(static IQuery
-        (query [_]
-          [:foo :bar])
-        Object
-        (render [_] "hello world"))))
+    '(static IQuery
+       (query [_]
+         [:foo :bar])))
+  )
