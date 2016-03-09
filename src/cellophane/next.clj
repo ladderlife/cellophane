@@ -219,6 +219,7 @@
          (~'-props [this#]
           props#)
          (~'-render [this#]
+          (reset! (:cellophaneclj$mounted? props#) true)
           ;; TODO: circle back. where should this exception be caught?
           (try
             (p/render this#)
@@ -276,6 +277,7 @@
             ref (:ref props)
             props {:cellophaneclj$reactRef ref
                    :cellophaneclj$reactKey react-key
+                   :cellophaneclj$mounted? (atom false)
                    :cellophaneclj$parent *parent*
                    :cellophaneclj$value (dissoc props :ref)}
             component (.newInstance ctor
@@ -290,6 +292,10 @@
         (when init-state
           (reset! (:state component) init-state))
         component)))))
+
+(defn- mounted? [c]
+  {:pre [(component? c)]}
+  (-> c p/-props :cellophaneclj$mounted? deref))
 
 (defn- parent
   "Returns the parent Om component."
@@ -307,7 +313,6 @@
 
 (defn react-ref [component name]
   {:pre [(component? component)]}
-  (p/-render component)
   (some-> @(:refs component) (get name)))
 
 (defn class-path [c]
@@ -386,6 +391,17 @@
     (if (component? x)
       (get-component-query x)
       (bind-query (class-query x) (class-params x)))))
+
+(defn subquery
+  "Given a class or mounted component x and a ref to an instantiated component
+   or class that defines a subquery, pick the most specific subquery. If the
+   component is mounted subquery-ref will be used, subquery-class otherwise."
+  [x subquery-ref subquery-class]
+  {:pre [(or (keyword? subquery-ref) (string? subquery-ref))
+         (class? subquery-class)]}
+  (if (and (component? x) (mounted? x))
+    (get-query (react-ref x subquery-ref))
+    (get-query subquery-class)))
 
 (defn get-ident [c]
   {:pre [(component? c)]}

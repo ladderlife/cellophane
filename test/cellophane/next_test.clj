@@ -114,6 +114,26 @@
   (query [this]
     [:foo :bar]))
 
+(defui SubqueryChild
+  static cellophane/IQuery
+  (query [this]
+    [:foo :bar])
+  Object
+  (render [this]
+    (dom/div nil "I'm a child")))
+
+(def subquery-child-factory (cellophane/factory SubqueryChild))
+
+(defui SubqueryParent
+  static cellophane/IQuery
+  (query [this]
+    [{:children (cellophane/get-query SubqueryChild)}])
+  Object
+  (render [this]
+    (dom/div nil
+      (subquery-child-factory {:ref :child-1})
+      (subquery-child-factory {:ref :child-2}))))
+
 (deftest test-queries
   (let [cqps-factory (cellophane/factory ComponentWithQPs)
         cq-factory (cellophane/factory ComponentWithQuery)
@@ -137,7 +157,17 @@
       (is (= (cellophane/get-unbound-query cqps)
              '[:foo (:bar {:a ?a})]))
       (is (= (cellophane/get-params cqps)
-             {:a 1})))))
+             {:a 1}))))
+  (testing "subquery"
+    (let [factory (cellophane/factory SubqueryParent)
+          c (factory)]
+      (is (= (cellophane/subquery c :child-1 SubqueryChild)
+             [:foo :bar]))
+      (p/-render c)
+      (is (#'cellophane/mounted? c))
+      (is (#'cellophane/mounted? (cellophane/react-ref c :child-1)))
+      (is (= (cellophane/subquery c :child-1 SubqueryChild)
+             [:foo :bar])))))
 
 (deftest test-temp-id-equality
   (let [uuid (java.util.UUID/randomUUID)
@@ -176,6 +206,7 @@
 (deftest test-react-refs
   (let [factory (cellophane/factory ReactRefsParent)
         c (factory)]
+    (p/-render c)
     (is (= (cellophane/react-type
              (cellophane/react-ref c "foo"))
            ReactRefsChild))))
@@ -201,5 +232,6 @@
 (deftest test-class-path
   (let [factory (cellophane/factory ClassPathParent)
         c (factory)]
+    (p/-render c)
     (is (= (cellophane/class-path (cellophane/react-ref c "child"))
            [ClassPathParent ClassPathChild]))))

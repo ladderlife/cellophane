@@ -80,7 +80,7 @@
                     (dom/div nil "Woz")])]))))
 
 (deftest test-render-to-str
-  (let [c (->SimpleComponent nil nil nil nil)]
+  (let [c ((cellophane/factory SimpleComponent))]
     (is (= (dom/render-to-str c) "<div data-reactid=\".0\">Hello World</div>")))
   (let [hello (cellophane/factory Hello)]
     (is (= (dom/render-to-str (hello {:text "Hello, world!"}))
