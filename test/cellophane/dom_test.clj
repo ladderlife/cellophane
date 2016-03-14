@@ -275,6 +275,61 @@
                       <span data-reactid=\".0.1\">More text</span>
                     </div>")))
 
+;; Om Links tutorial
+
+(defui LinksItem
+  static cellophane/Ident
+  (ident [_ {:keys [id]}]
+    [:item/by-id id])
+  static cellophane/IQuery
+  (query [_]
+    '[:id :title [:current-user _]])
+  Object
+  (render [this]
+    (let [{:keys [title current-user]} (cellophane/props this)]
+      (dom/li nil
+        (dom/div nil title)
+        (dom/div nil (:email current-user))))))
+
+(def links-item (cellophane/factory LinksItem))
+
+(defui LinksSomeList
+  static cellophane/IQuery
+  (query [_]
+    [{:items (cellophane/get-query LinksItem)}])
+  Object
+  (render [this]
+    (dom/div nil
+      (dom/h2 nil "A List!")
+      (dom/ul nil
+        (map links-item (-> this cellophane/props :items))))))
+
+;; TODO: this is not actually the real init data, but the result of parsing
+(def links-init-data
+  {:items [{:id 0 :title "Foo" :current-user {:email "bob.smith@gmail.com"}}
+           {:id 1 :title "Bar" :current-user {:email "bob.smith@gmail.com"}}
+           {:id 2 :title "Baz" :current-user {:email "bob.smith@gmail.com"}}]})
+
+(deftest test-render-links-tutorial
+  (let [ctor (cellophane/factory LinksSomeList)]
+    (is (= (dom/render-to-str (ctor links-init-data))
+          (remove-whitespace "<div data-reactid=\".0\">
+                                <h2 data-reactid=\".0.0\">A List!</h2>
+                                <ul data-reactid=\".0.1\">
+                                  <li data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 0]\">
+                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 0].0\">Foo</div>
+                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 0].1\">bob.smith@gmail.com</div>
+                                  </li>
+                                  <li data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 1]\">
+                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 1].0\">Bar</div>
+                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 1].1\">bob.smith@gmail.com</div>
+                                  </li>
+                                  <li data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 2]\">
+                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 2].0\">Baz</div>
+                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 2].1\">bob.smith@gmail.com</div>
+                                  </li>
+                                </ul>
+                              </div>")))))
 ;; ===================================================================
 ;; Checksums, react-ids
 
