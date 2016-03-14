@@ -251,6 +251,144 @@
     (is (cellophane/reconciler? r))
     (is (= @(cellophane/app-state r) {:a 1}))))
 
+;; Indexer
+
+(defui ^:once Component
+  static cellophane/IQuery
+  (query [this]
+    '[:foo/bar :baz/woz]))
+
+(defui ComponentList
+  static cellophane/IQueryParams
+  (params [this]
+    {:component (cellophane/get-query Component)})
+  static cellophane/IQuery
+  (query [this]
+    '[{:components/list ?component} :app/title]))
+
+(defui ComponentA
+  static cellophane/IQuery
+  (query [this]
+    '[:foo]))
+
+(defui ComponentB
+  static cellophane/IQuery
+  (query [this]
+    '[:bar]))
+
+(defui RootComponent
+  static cellophane/IQueryParams
+  (params [this]
+    {:component (cellophane/get-query ComponentA)})
+  static cellophane/IQuery
+  (query [this]
+    '[{:components/list ?component}]))
+
+(defui IdxrChild
+  static cellophane/IQuery
+  (query [_]
+    [:name]))
+
+(defui IdxrRoot
+  static cellophane/IQuery
+  (query [_]
+    [{:root [{:child (cellophane/get-query IdxrChild)}]}]))
+
+(defui OM-595-Component
+  static cellophane/IQuery
+  (query [this]
+    '[{:item [:id :title {:next ...}]}]))
+
+(defui IdxrNode
+  static cellophane/IQuery
+  (query [this]
+    '[:node-value {:children ...}]))
+
+(defui IdxrTree
+  static cellophane/IQuery
+  (query [this]
+    [{:tree (cellophane/get-query IdxrNode)}]))
+
+(defui IdxrLinkProp
+  static cellophane/IQuery
+  (query [this]
+    '[:foo [:current-user _]]))
+
+(defui IdxrLinkJoin
+  static cellophane/IQuery
+  (query [this]
+    '[:foo {[:current-user _] [:name :email]}]))
+
+(defui IdxrIdentProp
+  static cellophane/IQuery
+  (query [this]
+    '[:foo [:users/by-id 2]]))
+
+(defui IdxrIdentJoin
+  static cellophane/IQuery
+  (query [this]
+    '[:foo {[:users/by-id 2] [:id :name :email]}]))
+
+(defui IdxrLinkItem
+  static cellophane/IQuery
+  (query [this]
+    [:b]))
+
+(defui IdxrLinkRoot
+  static cellophane/IQuery
+  (query [this]
+    [{[:a '_] (cellophane/get-query IdxrLinkItem)}]))
+
+(defui IdxrParamsComponent
+  static cellophane/IQueryParams
+  (params [_]
+    {:foo ""})
+  static cellophane/IQuery
+  (query [_]
+    '[(:some/key {:foo ?foo})]))
+
+(deftest test-indexer
+  (testing "prop->classes"
+    (let [idxr (cellophane/indexer)
+          idxs (p/index-root idxr ComponentList)]
+      (is (= (set (keys (:prop->classes idxs)))
+            #{:app/title :components/list :foo/bar :baz/woz})))
+    (let [idxr (cellophane/indexer)
+          idxs (p/index-root idxr IdxrParamsComponent)]
+      (is (= (set (keys (:prop->classes idxs)))
+            #{:some/key}))))
+  (testing "simple recursion indexing"
+    (let [idxr (cellophane/indexer)
+          idxs (p/index-root idxr IdxrTree)
+          cps (keys (:class-path->query idxs))]
+      (is (= (count cps) 2))
+      (is (not (nil? (some #{[IdxrTree IdxrNode]} cps))))))
+  (testing "OM-595: recursion queries without own component"
+    (let [idxr (cellophane/indexer)
+          idxs (p/index-root idxr OM-595-Component)
+          cps (keys (:class-path->query idxs))]
+      (is (= (count cps) 1))
+      (is (= (first cps) [OM-595-Component]))))
+  (testing "OM-612: regression introduced by OM-595"
+    (let [idxr (cellophane/indexer)
+          idxs (p/index-root idxr IdxrRoot)
+          cps (keys (:class-path->query idxs))]
+      (is (not (nil? (some #{[IdxrRoot IdxrChild]} cps))))))
+  (testing "OM-620: link & indent indexing"
+    (let [idxr (cellophane/indexer)]
+      (are [class res] (= (->> class
+                            (p/index-root idxr)
+                            :prop->classes keys set)
+                         res)
+        IdxrLinkProp #{:foo :current-user}
+        IdxrLinkJoin #{:foo :current-user :name :email}
+        IdxrIdentProp #{:foo [:users/by-id 2]}
+        IdxrIdentJoin #{:foo [:users/by-id 2] :id :name :email})))
+  (testing "OM-639: index-root fails on links"
+    (let [idxr (cellophane/indexer)
+          idxs (p/index-root idxr IdxrLinkRoot)]
+      (is (contains? idxs :prop->classes)))))
+
 (deftest test-reconciler-has-indexer
   (let [r (cellophane/reconciler
             {:state (atom nil)})]

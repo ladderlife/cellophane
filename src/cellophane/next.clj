@@ -150,6 +150,31 @@
           {k (focus-query (get query k) ks)}
           (into [] (comp (filter match) (map value) (take 1)) query))))))
 
+(defn- focus->path
+  "Given a focused query return the path represented by the query.
+
+   Examples:
+
+     (om.next/focus->path [{:foo [{:bar {:baz []}]}])
+     => [:foo :bar :baz]"
+  ([focus]
+   (focus->path focus '* []))
+  ([focus bound]
+   (focus->path focus bound []))
+  ([focus bound path]
+   (if (and (or (= bound '*)
+                (and (not= path bound)
+                     (< (count path) (count bound))))
+            (some join? focus)
+            (== 1 (count focus)))
+     (let [[k focus'] (join-entry (first focus))
+           k (if (ident? k) (first k) k)
+           focus'     (if (recursion? focus')
+                        focus
+                        focus')]
+       (recur focus' bound (conj path k)))
+     path)))
+
 ;; =============================================================================
 ;; Query Protocols & Helpers
 
@@ -459,6 +484,11 @@
   {:pre [(component? component)]}
   (some-> @(:refs component) (get name)))
 
+(defn- path
+  "Returns the component's Om data path."
+  [c]
+  (get-prop c :cellophaneclj$path))
+
 (defn shared
   "Return the global shared properties of the Om Next root. See :shared and
    :shared-fn reconciler options."
@@ -739,7 +769,72 @@
         :ref->components   {}})
      extfs)))
 
-(defn- ^boolean unique-ident? [x]
+(defn- get-indexer
+  "Get the indexer associated with the reconciler."
+  [reconciler]
+  {:pre [(reconciler? reconciler)]}
+  (-> reconciler :config :indexer))
+
+(defn ref->components
+  "Return all components for a given ref."
+  [x ref]
+  (when-not (nil? ref)
+    (let [indexer (if (reconciler? x) (get-indexer x) x)]
+      (p/key->components indexer ref))))
+
+(defn ref->any
+  "Get any component from the indexer that matches the ref."
+  [x ref]
+  (let [indexer (if (reconciler? x) (get-indexer x) x)]
+    (first (p/key->components indexer ref))))
+
+(defn class->any
+  "Get any component from the indexer that matches the component class."
+  [x class]
+  (let [indexer (if (reconciler? x) (get-indexer x) x)]
+    (first (get-in @indexer [:class->components class]))))
+
+(defn class-path->queries
+  "Given x (a reconciler or indexer) and y (a component or component class
+   path), return the queries for that path."
+  [x y]
+  (let [indexer (if (reconciler? x) (get-indexer x) x)
+        cp      (if (component? y) (class-path y) y)]
+    (into #{} (map zip/root)
+      (get-in @indexer [:class-path->query cp]))))
+
+(defn full-query
+  "Returns the absolute query for a given component, not relative like
+   om.next/get-query."
+  ([component]
+   (when (iquery? component)
+     (if (nil? (path component))
+       (replace
+         (first
+           (get-in @(-> component get-reconciler get-indexer)
+             [:class-path->query (class-path component)]))
+         (get-query component))
+       (full-query component (get-query component)))))
+  ([component query]
+   (when (iquery? component)
+     (let [path' (into [] (remove number?) (path component))
+           cp    (class-path component)
+           qs    (get-in @(-> component get-reconciler get-indexer)
+                   [:class-path->query cp])]
+       (if-not (empty? qs)
+         ;; handle case where child appears multiple times at same class-path
+         ;; but with different queries
+         (let [q (first (filter #(= path' (-> % zip/root (focus->path path'))) qs))]
+           (if-not (nil? q)
+             (replace q query)
+             (throw
+               (ex-info (str "No queries exist for component path " cp " or data path " path')
+                 {:type :cellophane.next/no-queries}))))
+         (throw
+           (ex-info (str "No queries exist for component path " cp)
+             {:type :cellophane.next/no-queries})))))))
+
+(defn- unique-ident? [x]
   (and (ident? x) (= '_ (second x))))
 
 (defn- normalize* [query data refs union-seen]
