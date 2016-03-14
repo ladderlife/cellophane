@@ -2,7 +2,8 @@
   (:require [clojure.test :refer [deftest testing is are]]
             [cellophane.next :as cellophane :refer [defui]]
             [cellophane.dom :as dom]
-            [cellophane.protocols :as p]))
+            [cellophane.protocols :as p])
+  (:import [cellophane.next Indexer]))
 
 (defui SimpleComponent
   Object
@@ -66,6 +67,10 @@
 (def react-keys-state
   {:children [{:name "John"} {:name "Mary"}]})
 
+(defn react-keys-read
+  [{:keys [state]} _ _]
+  {:value (:children @state)})
+
 (deftest test-react-bridging
   (testing "factory, state, props, children"
     (let [c (simple-component-factory)]
@@ -84,8 +89,9 @@
             ["some text"]))))
   (testing "react keys"
     (let [c (simple-component-factory {:react-key "foo"})
-          rks-factory (cellophane/factory ReactKeysParent)
-          rks-c (rks-factory react-keys-state)]
+          r (cellophane/reconciler {:state (atom react-keys-state)
+                                    :parser (cellophane/parser {:read react-keys-read})})
+          rks-c (cellophane/add-root! r ReactKeysParent nil)]
       (is (= (cellophane/react-key c) "foo"))
       (is (= (-> (p/-render rks-c)
                :children first :react-key) "cellophane$next_test$ReactKeysChild_[:children 0]"))))
@@ -239,6 +245,16 @@
     (p/-render c)
     (is (= (cellophane/class-path (cellophane/react-ref c "child"))
            [ClassPathParent ClassPathChild]))))
+
+(deftest test-reconciler
+  (let [r (cellophane/reconciler {:state {:a 1}})]
+    (is (cellophane/reconciler? r))
+    (is (= @(cellophane/app-state r) {:a 1}))))
+
+(deftest test-reconciler-has-indexer
+  (let [r (cellophane/reconciler
+            {:state (atom nil)})]
+    (is (instance? Indexer (get-in r [:config :indexer])))))
 
 (def data
   {:list/one [{:name "John" :points 0 :friend {:name "Bob"}}

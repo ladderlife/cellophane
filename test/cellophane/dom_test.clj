@@ -1,4 +1,5 @@
 (ns cellophane.dom-test
+  (:refer-clojure :exclude [read])
   (:require [clojure.test :refer [deftest testing is are]]
             [clojure.string :as str]
             [cellophane.next :as cellophane :refer [defui]]
@@ -126,11 +127,25 @@
 
 ;; Om animals tutorial
 
-(def animals-state
-  {:app/title "Animals"
-   :animals/list
-   [[1 "Ant"] [2 "Antelope"] [3 "Bird"] [4 "Cat"] [5 "Dog"]
-    [6 "Lion"] [7 "Mouse"] [8 "Monkey"] [9 "Snake"] [10 "Zebra"]]})
+(def animals-app-state
+  (atom
+    {:app/title "Animals"
+     :animals/list
+     [[1 "Ant"] [2 "Antelope"] [3 "Bird"] [4 "Cat"] [5 "Dog"]
+      [6 "Lion"] [7 "Mouse"] [8 "Monkey"] [9 "Snake"] [10 "Zebra"]]}))
+
+(defmulti animals-read (fn [env key params] key))
+
+(defmethod animals-read :default
+  [{:keys [state] :as env} key params]
+  (let [st @state]
+    (if-let [[_ value] (find st key)]
+      {:value value}
+      {:value :not-found})))
+
+(defmethod animals-read :animals/list
+  [{:keys [state] :as env} key {:keys [start end]}]
+  {:value (subvec (:animals/list @state) start end)})
 
 (defui AnimalsList
   static cellophane/IQueryParams
@@ -150,24 +165,37 @@
               (dom/li nil (str i ". " name)))
             list))))))
 
+(def animals-reconciler
+  (cellophane/reconciler
+    {:state animals-app-state
+     :parser (cellophane/parser {:read animals-read})}))
+
 (deftest test-render-animals-tutorial
-  (let [ctor (cellophane/factory AnimalsList)]
-    (is (= (dom/render-to-str (ctor animals-state))
-           (remove-whitespace "<div data-reactid=\".0\">
-                                 <h2 data-reactid=\".0.0\">Animals</h2>
-                                 <ul data-reactid=\".0.1\">
-                                   <li data-reactid=\".0.1.0\">1. Ant</li>
-                                   <li data-reactid=\".0.1.1\">2. Antelope</li>
-                                   <li data-reactid=\".0.1.2\">3. Bird</li>
-                                   <li data-reactid=\".0.1.3\">4. Cat</li>
-                                   <li data-reactid=\".0.1.4\">5. Dog</li>
-                                   <li data-reactid=\".0.1.5\">6. Lion</li>
-                                   <li data-reactid=\".0.1.6\">7. Mouse</li>
-                                   <li data-reactid=\".0.1.7\">8. Monkey</li>
-                                   <li data-reactid=\".0.1.8\">9. Snake</li>
-                                   <li data-reactid=\".0.1.9\">10. Zebra</li>
-                                 </ul>
-                               </div>")))))
+  (let [result-markup (remove-whitespace
+                        "<div data-reactid=\".0\">
+                           <h2 data-reactid=\".0.0\">Animals</h2>
+                           <ul data-reactid=\".0.1\">
+                             <li data-reactid=\".0.1.0\">1. Ant</li>
+                             <li data-reactid=\".0.1.1\">2. Antelope</li>
+                             <li data-reactid=\".0.1.2\">3. Bird</li>
+                             <li data-reactid=\".0.1.3\">4. Cat</li>
+                             <li data-reactid=\".0.1.4\">5. Dog</li>
+                             <li data-reactid=\".0.1.5\">6. Lion</li>
+                             <li data-reactid=\".0.1.6\">7. Mouse</li>
+                             <li data-reactid=\".0.1.7\">8. Monkey</li>
+                             <li data-reactid=\".0.1.8\">9. Snake</li>
+                             <li data-reactid=\".0.1.9\">10. Zebra</li>
+                           </ul>
+                         </div>")]
+    (testing "render with factory"
+      (let [ctor (cellophane/factory AnimalsList)]
+        (is (= (dom/render-to-str (ctor @animals-app-state)) result-markup))))
+    (testing "render with reconciler & add-root!"
+      (let [c (cellophane/add-root! animals-reconciler AnimalsList nil)
+            markup-str (dom/render-to-str c)]
+        (is (= (class (cellophane/app-root animals-reconciler)) AnimalsList))
+        (is (= markup-str result-markup))
+        ))))
 
 ;; Simple nested `defui`s
 
@@ -193,6 +221,13 @@
 
 
 ;; Om Simple Recursive Tree
+(def simple-tree-data
+  {:tree {:node-value 1
+          :children [{:node-value 2
+                      :children [{:node-value 3
+                                  :children []}]}
+                     {:node-value 4
+                      :children []}]}})
 
 (declare simple-node)
 
@@ -220,17 +255,31 @@
       (dom/ul nil
         (simple-node tree)))))
 
-(def simple-tree-data
-  {:tree {:node-value 1
-          :children [{:node-value 2
-                      :children [{:node-value 3
-                                  :children []}]}
-                     {:node-value 4
-                      :children []}]}})
+(defmulti simple-tree-read cellophane/dispatch)
+
+(defmethod simple-tree-read :node-value
+  [{:keys [data] :as env} _ _]
+  {:value (:node-value data)})
+
+(defmethod simple-tree-read :children
+  [{:keys [data parser query] :as env} _ _]
+  {:value (let [f #(parser (assoc env :data %) query)]
+            (into [] (map f (:children data))))})
+
+(defmethod simple-tree-read :tree
+  [{:keys [state parser query] :as env} k _]
+  (let [st @state]
+    {:value (parser (assoc env :data (:tree st)) query)}))
+
+(def simple-tree-reconciler
+  (cellophane/reconciler
+    {:state     (atom simple-tree-data)
+     :normalize false
+     :parser    (cellophane/parser {:read simple-tree-read})}))
 
 (deftest test-render-simple-recursive-example
-  (let [ctor (cellophane/factory SimpleTree)]
-    (is (= (dom/render-to-str (ctor simple-tree-data))
+  (let [c (cellophane/add-root! simple-tree-reconciler SimpleTree nil)]
+    (is (= (dom/render-to-str c)
           (remove-whitespace
             "<ul data-reactid=\".0\">
                <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree]\">
@@ -278,6 +327,19 @@
 
 ;; Om Links tutorial
 
+(def links-init-data
+  {:current-user {:email "bob.smith@gmail.com"}
+   :items [{:id 0 :title "Foo"}
+           {:id 1 :title "Bar"}
+           {:id 2 :title "Baz"}]})
+
+(defmulti links-read cellophane/dispatch)
+
+(defmethod links-read :items
+  [{:keys [query state]} k _]
+  (let [st @state]
+    {:value (cellophane/db->tree query (get st k) st)}))
+
 (defui LinksItem
   static cellophane/Ident
   (ident [_ {:keys [id]}]
@@ -305,15 +367,14 @@
       (dom/ul nil
         (map links-item (-> this cellophane/props :items))))))
 
-;; TODO: this is not actually the real init data, but the result of parsing
-(def links-init-data
-  {:items [{:id 0 :title "Foo" :current-user {:email "bob.smith@gmail.com"}}
-           {:id 1 :title "Bar" :current-user {:email "bob.smith@gmail.com"}}
-           {:id 2 :title "Baz" :current-user {:email "bob.smith@gmail.com"}}]})
+(def links-reconciler
+  (cellophane/reconciler
+    {:state links-init-data
+     :parser (cellophane/parser {:read links-read})}))
 
 (deftest test-render-links-tutorial
-  (let [ctor (cellophane/factory LinksSomeList)]
-    (is (= (dom/render-to-str (ctor links-init-data))
+  (let [c (cellophane/add-root! links-reconciler LinksSomeList nil)]
+    (is (= (dom/render-to-str c)
           (remove-whitespace
             "<div data-reactid=\".0\">
                <h2 data-reactid=\".0.0\">A List!</h2>
@@ -332,6 +393,54 @@
                  </li>
                </ul>
              </div>")))))
+
+;; Shared test
+
+(defui Home
+  static cellophane/IQuery
+  (query [this] [:counter])
+
+  Object
+  (render [this]
+    (let [shared (cellophane/shared this)
+          props  (cellophane/props this)]
+      (dom/div nil
+        (dom/h3 nil (str "Props: " props))
+        (dom/h3 nil (str "Shared: " shared))
+        (dom/button
+          #js {;:onClick #(om/transact! this '[(my/test) :counter])
+               }
+          "Increment!")))))
+
+(def app-state (atom {:counter 0}))
+
+(defn read
+  [env key params]
+  (let [{:keys [state]} env]
+    {:value (get @state key)}))
+
+(defn mutate
+  [env key params]
+  (let [{:keys [state]} env]
+    {:value  {:keys [:counter]}
+     :action #(swap! state update-in [:counter] inc)}))
+
+(def reconciler
+  (cellophane/reconciler
+    {:state     app-state
+     :parser    (cellophane/parser {:read read :mutate mutate})
+     :shared    {}
+     :shared-fn (fn [root-props]
+                  root-props)}))
+
+(deftest test-shared
+  (let [c (cellophane/add-root! reconciler Home nil)]
+    (is (= (dom/render-to-str c)
+           (remove-whitespace "<div data-reactid=\".0\">
+                                 <h3 data-reactid=\".0.0\">Props: {:counter 0}</h3>
+                                 <h3 data-reactid=\".0.1\">Shared: {:counter 0}</h3>
+                                 <button data-reactid=\".0.2\">Increment!</button>
+                               </div>")))))
 
 ;; ===================================================================
 ;; Checksums, react-ids
