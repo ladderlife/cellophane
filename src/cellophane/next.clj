@@ -358,11 +358,15 @@
     expr))
 
 (defn- bind-query [query params]
-   (letfn [(replace-var [expr]
-             (if (var? expr)
-               (get params (var->keyword expr) expr)
-               expr))]
-     (walk/prewalk replace-var query)))
+  (let [qm (meta query)
+        tr (map #(bind-query % params))
+        ret (cond
+              (seq? query) (sequence tr query)
+              (instance? clojure.lang.IMapEntry query) (into [] tr query)
+              (coll? query) (into (empty query) tr query)
+              :else (replace-var query params))]
+    (cond-> ret
+      (and qm (instance? clojure.lang.IObj ret)) (with-meta qm))))
 
 (defn- get-local-query-data [component]
   ;; TODO: change when we implement `set-query!`
@@ -382,7 +386,9 @@
 (defn- get-component-query [c]
   (let [qps (get-local-query-data c)
         q   (:query qps (query c))]
-    (bind-query q (:params qps (params c)))))
+    (with-meta
+      (bind-query q (:params qps (params c)))
+      {:component (class c)})))
 
 (defn get-query
   "Return a IQuery/IParams instance bound query. Works for component classes
@@ -391,7 +397,7 @@
   (when (iquery? x)
     (if (component? x)
       (get-component-query x)
-      (bind-query (class-query x) (class-params x)))))
+      (with-meta (bind-query (class-query x) (class-params x)) {:component x}))))
 
 (defn subquery
   "Given a class or mounted component x and a ref to an instantiated component
