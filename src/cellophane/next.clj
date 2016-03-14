@@ -4,6 +4,7 @@
             [clojure.reflect :as reflect]
             [clojure.string :as str]
             [clojure.walk :as walk]
+            [om.next.impl.parser :as parser]
             [om.tempid :as tempid]
             [om.transit :as transit]))
 
@@ -34,17 +35,17 @@
   (-get-rendered-state [this] "Get the component's rendered local state")
   (-merge-pending-state! [this] "Get the component's pending local state"))
 
-(defn- dispatch
+(defn- class-dispatch
   "Helper function for implementing static `query` and `params` multimethods.
    Dispatches on the (component) class"
   [class] class)
 
-(defmulti class-query dispatch)
+(defmulti class-query class-dispatch)
 
-(defmulti class-params dispatch)
+(defmulti class-params class-dispatch)
 (defmethod class-params :default [_])
 
-(defmulti class-ident dispatch)
+(defmulti class-ident class-dispatch)
 
 ;; ===================================================================
 ;; React bridging (defui, factory, props, state)
@@ -410,6 +411,29 @@
     (ident c m)))
 
 ;; ===================================================================
+;; Parser
+
+(defn parser
+  "Create a parser. The argument is a map of two keys, :read and :mutate. Both
+   functions should have the signature (Env -> Key -> Params -> ParseResult)."
+  [{:keys [read mutate] :as opts}]
+  {:pre [(map? opts)]}
+  (parser/parser opts))
+
+(defn dispatch
+  "Helper function for implementing :read and :mutate as multimethods. Use this
+   as the dispatch-fn."
+  [_ key _] key)
+
+(defn query->ast
+  "Given a query expression convert it into an AST."
+  [query-expr]
+  (parser/query->ast query-expr))
+
+(defn ast->query [query-ast]
+  "Given an AST convert it back into a query expression."
+  (parser/ast->expr query-ast true))
+
 
 (defn tempid
   "Return a temporary id."
