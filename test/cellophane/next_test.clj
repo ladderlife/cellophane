@@ -146,8 +146,12 @@
     (testing "get-query"
       (is (= (cellophane/get-query ComponentWithQPs)
              '[:foo (:bar {:a 1})]))
+      (is (= (meta (cellophane/get-query ComponentWithQPs))
+             {:component ComponentWithQPs}))
       (is (= (cellophane/get-query cqps)
              '[:foo (:bar {:a 1})]))
+      (is (= (meta (cellophane/get-query cqps))
+             {:component ComponentWithQPs}))
       (is (= (cellophane/get-query ComponentWithQuery)
              [:foo :bar]))
       (is (= (cellophane/get-query cq)
@@ -235,3 +239,55 @@
     (p/-render c)
     (is (= (cellophane/class-path (cellophane/react-ref c "child"))
            [ClassPathParent ClassPathChild]))))
+
+(def data
+  {:list/one [{:name "John" :points 0 :friend {:name "Bob"}}
+              {:name "Mary" :points 0 :foo :bar}
+              {:name "Bob" :points 0 :friend {:name "John"}}]
+   :list/two [{:name "Gwen" :points 0 :friends [{:name "Jeff"}]}
+              {:name "Mary" :points 0 :baz :woz}
+              {:name "Jeff" :points 0 :friends [{:name "Gwen"}]}]})
+
+(defui Person
+  static cellophane/Ident
+  (ident [this {:keys [name]}]
+    [:person/by-name name])
+  static cellophane/IQuery
+  (query [this]
+    [:name :points
+     {:friend (cellophane/tag [:name] Person)}
+     {:friends (cellophane/tag [:name] Person)}
+     :foo :baz])
+  Object
+  (render [this]))
+
+(defui ListView
+  Object
+  (render [this]))
+
+(defui RootView
+  static cellophane/IQuery
+  (query [this]
+    (let [subquery (cellophane/get-query Person)]
+      [{:list/one subquery} {:list/two subquery}]))
+  Object
+  (render [this]))
+
+(deftest test-tree->db
+  (let [norm (cellophane/tree->db RootView data)
+        refs (meta norm)
+        p0   (get-in refs [:person/by-name "Mary"])]
+    (is (= 3 (count (get norm :list/one))))
+    (is (= {:name "John" :points 0 :friend [:person/by-name "Bob"]}
+           (get-in refs [:person/by-name "John"])))
+    (is (= 3 (count (get norm :list/two))))
+    (is (contains? p0 :foo))
+    (is (contains? p0 :baz))))
+
+(deftest test-incremental-tree->db
+  (let [p0   (cellophane/tree->db Person
+               {:name "Susan" :points 5 :friend {:name "Mary"}})
+        refs (meta p0)]
+    (is (= {:name "Susan" :points 5 :friend [:person/by-name "Mary"]}
+           p0))
+    (is (= refs {:person/by-name {"Mary" {:name "Mary"}}}))))
