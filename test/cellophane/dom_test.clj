@@ -231,26 +231,27 @@
 (deftest test-render-simple-recursive-example
   (let [ctor (cellophane/factory SimpleTree)]
     (is (= (dom/render-to-str (ctor simple-tree-data))
-          (remove-whitespace "<ul data-reactid=\".0\">
-                                <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree]\">
-                                  <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].0\">Node value:1</div>
-                                  <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1\">
-                                    <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0]\">
-                                      <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].0\">Node value:2</div>
-                                      <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1\">
-                                        <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0]\">
-                                          <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].0\">Node value:3</div>
-                                          <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].1\"></ul>
-                                        </li>
-                                      </ul>
-                                    </li>
-                                    <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1]\">
-                                      <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].0\">Node value:4</div>
-                                      <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].1\"></ul>
-                                    </li>
-                                  </ul>
-                                </li>
-                              </ul>")))))
+          (remove-whitespace
+            "<ul data-reactid=\".0\">
+               <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree]\">
+                 <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].0\">Node value:1</div>
+                 <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1\">
+                   <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0]\">
+                     <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].0\">Node value:2</div>
+                     <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1\">
+                       <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0]\">
+                         <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].0\">Node value:3</div>
+                         <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].1\"></ul>
+                       </li>
+                     </ul>
+                   </li>
+                   <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1]\">
+                     <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].0\">Node value:4</div>
+                     <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].1\"></ul>
+                   </li>
+                 </ul>
+               </li>
+             </ul>")))))
 
 (defn MultipleTextChildren []
   (dom/div nil
@@ -313,23 +314,25 @@
 (deftest test-render-links-tutorial
   (let [ctor (cellophane/factory LinksSomeList)]
     (is (= (dom/render-to-str (ctor links-init-data))
-          (remove-whitespace "<div data-reactid=\".0\">
-                                <h2 data-reactid=\".0.0\">A List!</h2>
-                                <ul data-reactid=\".0.1\">
-                                  <li data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 0]\">
-                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 0].0\">Foo</div>
-                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 0].1\">bob.smith@gmail.com</div>
-                                  </li>
-                                  <li data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 1]\">
-                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 1].0\">Bar</div>
-                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 1].1\">bob.smith@gmail.com</div>
-                                  </li>
-                                  <li data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 2]\">
-                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 2].0\">Baz</div>
-                                    <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 2].1\">bob.smith@gmail.com</div>
-                                  </li>
-                                </ul>
-                              </div>")))))
+          (remove-whitespace
+            "<div data-reactid=\".0\">
+               <h2 data-reactid=\".0.0\">A List!</h2>
+               <ul data-reactid=\".0.1\">
+                 <li data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 0]\">
+                   <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 0].0\">Foo</div>
+                   <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 0].1\">bob.smith@gmail.com</div>
+                 </li>
+                 <li data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 1]\">
+                   <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 1].0\">Bar</div>
+                   <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 1].1\">bob.smith@gmail.com</div>
+                 </li>
+                 <li data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 2]\">
+                   <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 2].0\">Baz</div>
+                   <div data-reactid=\".0.1.$cellophane$dom_test$LinksItem_[=2items 2].1\">bob.smith@gmail.com</div>
+                 </li>
+               </ul>
+             </div>")))))
+
 ;; ===================================================================
 ;; Checksums, react-ids
 
