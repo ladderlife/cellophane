@@ -366,6 +366,8 @@
     (->> dt (map reshape*) vec add-object-protocol add-defaults)))
 
 ;; TODO: probably need to reshape dt to implement defaults
+;; TODO: instead of creating a defrecord that needs to be imported, should we just
+;; define a function?
 (defn defui* [name forms]
   (let [{:keys [dt statics]} (collect-statics forms)
         define-class-methods (when-not (empty? (:protocols statics))
