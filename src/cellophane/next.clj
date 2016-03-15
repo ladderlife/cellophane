@@ -1249,6 +1249,45 @@
 ;; ===================================================================
 ;; Reconciler
 
+(defn- sift-idents [res]
+  (let [{idents true rest false} (group-by #(vector? (first %)) res)]
+    [(into {} idents) (into {} rest)]))
+
+(defn- merge-idents [tree config refs query]
+  (let [{:keys [merge-ident indexer]} config
+        ident-joins (into {} (filter #(and (join? %)
+                                           (ident? (join-key %)))
+                               query))]
+    (letfn [(step [tree' [ident props]]
+              (if (:normalize config)
+                (let [c-or-q (or (get ident-joins ident) (ref->any indexer ident))
+                      props' (tree->db c-or-q props)
+                      refs   (meta props')]
+                  ((:merge-tree config)
+                   (merge-ident config tree' ident props') refs))
+                (merge-ident config tree' ident props)))]
+      (reduce step tree refs))))
+
+(defn- merge-novelty!
+  [reconciler state res query]
+  (let [config      (:config reconciler)
+        [idts res'] (sift-idents res)
+        res'        (if (:normalize config)
+                      (tree->db
+                        (or query (:root @(:state reconciler)))
+                        res' true)
+                      res')]
+    (-> state
+      (merge-idents config idts query)
+      ((:merge-tree config) res'))))
+
+(defn default-merge [reconciler state res query]
+  {:keys    (into [] (remove symbol?) (keys res))
+   :next    (merge-novelty! reconciler state res query)
+   :tempids (->> (filter (comp symbol? first) res)
+              (map (comp :tempids second))
+              (reduce merge {}))})
+
 (defn merge!
   "Merge a state delta into the application state. Affected components managed
    by the reconciler will re-render."
@@ -1267,6 +1306,39 @@
              (or query (get-query (:root @(:state reconciler))))
              tempids (:id-key config)))
          next)))))
+
+(defn- default-merge-ident
+  [_ tree ref props]
+  (update-in tree ref merge props))
+
+(defn- default-merge-tree
+  [a b]
+  (if (map? a)
+    (merge a b)
+    b))
+
+(defn- default-migrate
+  "Given app-state-pure (the application state as an immutable value), a query,
+   tempids (a hash map from tempid to stable id), and an optional id-key
+   keyword, return a new application state value with the tempids replaced by
+   the stable ids."
+  ([app-state-pure query tempids]
+    (default-migrate app-state-pure query tempids nil))
+  ([app-state-pure query tempids id-key]
+   (letfn [(dissoc-in [pure [table id]]
+             (assoc pure table (dissoc (get pure table) id)))
+           (step [pure [old [_ id :as new]]]
+             (-> pure
+               (dissoc-in old)
+               (assoc-in new
+                 (cond-> (merge (get-in pure old) (get-in pure new))
+                   (not (nil? id-key)) (assoc id-key id)))))]
+     (if-not (empty? tempids)
+       (let [pure' (reduce step app-state-pure tempids)]
+         (tree->db query
+           (db->tree query pure' pure'
+             (fn [ident] (get tempids ident ident))) true))
+       app-state-pure))))
 
 (defrecord Reconciler [config state]
   clojure.lang.IDeref
@@ -1329,15 +1401,18 @@
             ;(schedule-render! this)
             ))
         (parsef)
-        #_(when-let [sel (get-query (or (and target @ret) root-class))]
+        (when-let [sel (get-query (or @ret root-class))]
           (let [env  (to-env config)
                 snds (gather-sends env sel (:remotes config))]
             (when-not (empty? snds)
               (when-let [send (:send config)]
                 (send snds
-                  (fn [res query]
-                    (merge! this res query)
-                    (renderf ((:parser config) env sel))))))))
+                  (fn send-cb
+                    ([res]
+                     (send-cb res nil))
+                    ([res query]
+                     (merge! this res query)
+                     (renderf ((:parser config) env sel)))))))))
         @ret)))
 
   (remove-root! [_ target]
@@ -1424,17 +1499,16 @@
          indexer      cellophane.next/indexer
          merge-sends  #(merge-with into %1 %2)
          remotes      [:remote]
-         ;; merge        default-merge
-         ;; merge-tree   default-merge-tree
-         ;; merge-ident  default-merge-ident
+         merge        default-merge
+         merge-tree   default-merge-tree
+         merge-ident  default-merge-ident
          ;; prune-tree   default-extract-errors
          ;; optimize     (fn [cs] (sort-by depth cs))
          history      100
          ;; root-render  #(js/ReactDOM.render %1 %2)
          ;; root-unmount #(js/ReactDOM.unmountComponentAtNode %)
          pathopt      false
-         ;; migrate      default-migrate
-         }
+         migrate      default-migrate}
     :as config}]
   {:pre [(map? config)]}
   (let [idxr   (indexer)

@@ -465,3 +465,54 @@
     (is (= {:name "Susan" :points 5 :friend [:person/by-name "Mary"]}
            p0))
     (is (= refs {:person/by-name {"Mary" {:name "Mary"}}}))))
+
+;; Remote test
+
+(defn remote-read
+  [{:keys [state]} k _]
+  (assert (= k :some/list))
+  (let [st @state]
+    (if (contains? st k)
+      {:value (get st k)}
+      {:remote true})))
+
+(defui RemotePerson
+  static cellophane/Ident
+  (ident [this {:keys [name]}]
+    [:person/by-name name])
+  static cellophane/IQuery
+  (query [this]
+    [:name :age])
+  Object
+  (render [this]
+    (let [{:keys [name age] :as props} (cellophane/props this)]
+      (dom/li nil
+        (dom/label nil (str name ", age: " age))))))
+
+(def remote-person (cellophane/factory RemotePerson {:keyfn :name}))
+
+(defui RemoteList
+  static cellophane/IQuery
+  (query [this]
+    [{:some/list (cellophane/get-query RemotePerson)}])
+  Object
+  (render [this]
+    (let [{:keys [some/list]} (cellophane/props this)]
+      (apply dom/ul nil
+        (map remote-person list)))))
+
+(defn remote-send [{:keys [remote]} cb]
+  ;; simulate calling the server parser
+  (cb {:some/list [{:name "John" :age 30} {:name "Mary" :age 25}]} remote))
+
+(def remote-reconciler
+  (cellophane/reconciler {:state (atom {})
+                          :normalize true
+                          :parser (cellophane/parser {:read remote-read})
+                          :send remote-send}))
+
+(deftest test-remote-send
+  (let [c (cellophane/add-root! remote-reconciler RemoteList nil)]
+    (is (some? c))
+    (is (not (empty? @remote-reconciler)))))
+
