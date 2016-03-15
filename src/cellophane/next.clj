@@ -1089,10 +1089,10 @@
                                                (when (:shared-fn config)
                                                  ((:shared-fn config) data)))
                                 *instrument* (:instrument config)]
-                        (let [c (if-not (nil? @ret)
-                                  ret
-                                  (doto (rctor data)
-                                    p/-render))]
+                        (let [c (if-let [c' @ret]
+                                  c'
+                                  (rctor data))]
+                          (p/-render c)
                           (when (and (nil? @ret) (not (nil? c)))
                             (swap! state assoc :root c)
                             (reset! ret c)))))
@@ -1277,6 +1277,13 @@
   [reconciler]
   {:pre [(reconciler? reconciler)]}
   (get @(:state reconciler) :root))
+
+(defn force-root-render!
+  "Force a re-render of the root. Not recommended for anything except
+   recomputing :shared."
+  [reconciler]
+  {:pre [(reconciler? reconciler)]}
+  ((get @(:state reconciler) :render)))
 
 (defn tempid
   "Return a temporary id."

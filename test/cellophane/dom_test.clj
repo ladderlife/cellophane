@@ -440,7 +440,8 @@
                                  <h3 data-reactid=\".0.0\">Props: {:counter 0}</h3>
                                  <h3 data-reactid=\".0.1\">Shared: {:counter 0}</h3>
                                  <button data-reactid=\".0.2\">Increment!</button>
-                               </div>")))))
+                               </div>")))
+    (is (= (cellophane/force-root-render! reconciler) nil))))
 
 ;; ===================================================================
 ;; Checksums, react-ids
