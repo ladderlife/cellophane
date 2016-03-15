@@ -77,6 +77,7 @@
         (is (= (class (cellophane/app-root animals-reconciler)) AnimalsList))
         (is (= markup-str result-markup))))))
 
+;; =============================================================================
 ;; Om Links tutorial
 
 (def links-init-data
@@ -127,22 +128,23 @@
 (deftest test-render-links-tutorial
   (let [c (cellophane/add-root! links-reconciler LinksSomeList nil)]
     (is (= (dom/render-to-str c)
-          (remove-whitespace
-            "<div data-reactid=\".0\">
-               <h2 data-reactid=\".0.0\">A List!</h2>
-               <ul data-reactid=\".0.1\">
-                 <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0]\">
-                   <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0].0\">Foo</div>
-                   <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0].1\">bob.smith@gmail.com</div>
-                 </li>
-                 <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1]\">
-                   <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1].0\">Bar</div>
-                   <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1].1\">bob.smith@gmail.com</div>
-                 </li>
-                 <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2]\">
-                   <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2].0\">Baz</div>
-                   <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2].1\">bob.smith@gmail.com</div>
-                 </li>
-               </ul>
-             </div>")))))
+           (remove-whitespace
+             "<div data-reactid=\".0\">
+                <h2 data-reactid=\".0.0\">A List!</h2>
+                <ul data-reactid=\".0.1\">
+                  <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0]\">
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0].0\">Foo</div>
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0].1\">bob.smith@gmail.com</div>
+                  </li>
+                  <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1]\">
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1].0\">Bar</div>
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1].1\">bob.smith@gmail.com</div>
+                  </li>
+                  <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2]\">
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2].0\">Baz</div>
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2].1\">bob.smith@gmail.com</div>
+                  </li>
+                </ul>
+              </div>")))))
+
 
