@@ -228,7 +228,7 @@
 
 (defn render-attr-map [attrs]
   (apply str
-    (clojure.core/map render-attribute (sort-by key #(compare %2 %1) attrs))))
+    (clojure.core/map render-attribute attrs)))
 
 (def ^{:doc "A list of elements that must be rendered without a closing tag."
        :private true}

@@ -104,6 +104,23 @@
              (dom/div #js {:ref "someDiv"})))
          "<div data-reactid=\".0\"></div>")))
 
+(deftest test-attrs-rendered-in-declaration-order
+  (are [element res] (= (dom/render-element (dom/assign-react-ids element)) res)
+    (dom/input {:type "text"
+                :placeholder "some text"
+                :id "stuff"})
+    "<input type=\"text\" placeholder=\"some text\" id=\"stuff\" data-reactid=\".0\">"
+
+    (dom/input {:id "stuff"
+                :placeholder "some text"
+                :type "text"})
+    "<input id=\"stuff\" placeholder=\"some text\" type=\"text\" data-reactid=\".0\">"
+
+    (dom/input {:placeholder "some text"
+                :id "stuff"
+                :type "text"})
+    "<input placeholder=\"some text\" id=\"stuff\" type=\"text\" data-reactid=\".0\">"))
+
 (def styles
   #js {:textAlign "center"
        :marginLeft "10px"})
