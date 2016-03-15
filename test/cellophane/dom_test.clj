@@ -44,13 +44,13 @@
       (simple-component) "<div data-reactid=\".0\">Hello World</div>"
       (simple-nested-component) (remove-whitespace
                                   "<div data-reactid=\".0\">
-                                     <h1 data-reactid=\".0.0\" id=\"page-title\">Title</h1>
+                                     <h1 id=\"page-title\" data-reactid=\".0.0\">Title</h1>
                                    </div>")
       (comp-nested-component) (remove-whitespace
                                 "<div data-reactid=\".0\">
                                    <div data-reactid=\".0.0\">Hello World</div>
                                    <div data-reactid=\".0.1\">
-                                     <h1 data-reactid=\".0.1.0\" id=\"page-title\">Title</h1>
+                                     <h1 id=\"page-title\" data-reactid=\".0.1.0\">Title</h1>
                                    </div>
                                  </div>"))))
 
@@ -118,7 +118,7 @@
 (deftest test-render-component-with-style
   (let [ctor (cellophane/factory ComponentWithStyle)]
     (is (= (dom/render-to-str (ctor))
-          "<div data-reactid=\".0\" style=\"text-align:center;margin-left:10px;\"></div>"))))
+          "<div style=\"text-align:center;margin-left:10px;\" data-reactid=\".0\"></div>"))))
 
 ;; Simple nested `defui`s
 

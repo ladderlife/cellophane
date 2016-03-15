@@ -210,7 +210,9 @@
   (letfn [(coerce-value [k v]
             (cond-> v
               (and (number? v)
-                   (not (contains? no-suffix k))) (str "px")))]
+                   (not (contains? no-suffix k))
+                   (pos? v))
+              (str "px")))]
     (reduce (fn [s [k v]]
               (let [k (name k)]
                 (str s (camel->kebab-case k) ":" (coerce-value k v) ";")))
@@ -226,7 +228,7 @@
 
 (defn render-attr-map [attrs]
   (apply str
-    (clojure.core/map render-attribute (sort-by key attrs))))
+    (clojure.core/map render-attribute (sort-by key #(compare %2 %1) attrs))))
 
 (def ^{:doc "A list of elements that must be rendered without a closing tag."
        :private true}
