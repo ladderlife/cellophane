@@ -312,7 +312,7 @@
 (defn gen-tag-fn [tag]
   `(defn ~tag [~'attrs & ~'children]
      (element {:tag (quote ~tag)
-               :attrs ~'attrs
+               :attrs (dissoc ~'attrs :ref)
                :children ~'children})))
 
 (defmacro gen-all-tags []

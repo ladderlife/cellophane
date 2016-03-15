@@ -98,6 +98,12 @@
     {:acceptCharset "ISO-8859-1"} " accept-charset=\"ISO-8859-1\""
     {:placeholder "Title"} " placeholder=\"Title\""))
 
+(deftest test-ref-is-elided-in-props
+  (is (= (dom/render-element
+           (dom/assign-react-ids
+             (dom/div #js {:ref "someDiv"})))
+         "<div data-reactid=\".0\"></div>")))
+
 (def styles
   #js {:textAlign "center"
        :marginLeft "10px"})
