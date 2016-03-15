@@ -296,10 +296,11 @@
                                    (assoc (p/-render c) :react-key
                                      (some-> (p/-props c) :cellophaneclj$reactKey))
 
-                                   (string? c)
-                                   (if (> child-node-count 1)
-                                     (span nil c)
-                                     (text-node c))
+                                   (or (string? c) (number? c))
+                                   (let [c (cond-> c (number? c) str)]
+                                     (if (> child-node-count 1)
+                                       (span nil c)
+                                       (text-node c)))
                                    (nil? c) nil
                                    :else (do
                                            (println "invalid child element:" c (class c))
