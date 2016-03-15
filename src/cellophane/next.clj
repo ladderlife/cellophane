@@ -76,6 +76,10 @@
     (and (map? expr)
          (map? (-> expr first second)))))
 
+(defn mutation? [expr]
+  (let [expr (cond-> expr (seq? expr) first)]
+    (symbol? expr)))
+
 (defn- query-template
   "Given a query and a path into a query return a zipper focused at the location
    specified by the path. This location can be replaced to customize / alter
@@ -603,10 +607,52 @@
     (assert (not (nil? m)) "get-ident invoked on component with nil props")
     (ident c m)))
 
+(declare full-query force ref->components)
+
+(defn gather-sends
+  [{:keys [parser] :as env} q remotes]
+  (into {}
+    (comp
+      (map #(vector % (parser env q %)))
+      (filter (fn [[_ v]] (pos? (count v)))))
+    remotes))
+
+(defn transform-reads
+  "Given r (a reconciler) and a query expression including a mutation and
+   any simple reads, return the equivalent query expression where the simple
+   reads have been replaced by the full query for each component that cares about
+   the specified read."
+  [r tx]
+  (letfn [(with-target [target q]
+            (if-not (nil? target)
+              [(force (first q) target)]
+              q))
+          (add-focused-query [k target tx c]
+            (->> (focus-query (get-query c) [k])
+              (with-target target)
+              (full-query c)
+              (into tx)))]
+    (loop [exprs (seq tx) tx' []]
+      (if-not (nil? exprs)
+        (let [expr (first exprs)
+              ast  (parser/expr->ast expr)
+              key  (:key ast)
+              tgt  (:target ast)]
+          (if (keyword? key)
+            (recur (next exprs)
+              (reduce #(add-focused-query key tgt %1 %2)
+                tx' (ref->components r key)))
+            (recur (next exprs) (conj tx' expr))))
+        tx'))))
+
 ;; =============================================================================
 ;; Reconciler API
 
 (declare reconciler? remove-root!)
+
+(defn schedule-sends! [reconciler]
+  (when (p/schedule-sends! reconciler)
+    (p/send! reconciler)))
 
 (defn add-root!
   ([reconciler root-class target]
@@ -622,10 +668,83 @@
 ;; =============================================================================
 ;; Transactions
 
-;; TODO: circle back
+(defprotocol ITxIntercept
+  (tx-intercept [c tx]
+    "An optional protocol that component may implement to intercept child
+     transactions."))
+
 (defn- to-env [x]
   (let [config (if (reconciler? x) (:config x) x)]
     (select-keys config [:state :shared :parser :logger :pathopt])))
+
+(defn transact* [r c ref tx]
+  (let [cfg  (:config r)
+        ref  (if (and c (satisfies? Ident c) (not ref))
+               (ident c (props c))
+               ref)
+        env  (merge
+               (to-env cfg)
+               {:reconciler r :component c}
+               (when ref
+                 {:ref ref}))
+        ;; id   (random-uuid)
+        ;; _    (.add (:history cfg) id @(:state cfg))
+        ;; _    (when-let [l (:logger cfg)]
+        ;;        (glog/info l
+        ;;          (str (when ref (str (pr-str ref) " "))
+        ;;            "transacted '" tx ", " (pr-str id))))
+        v    ((:parser cfg) env tx)
+        snds (gather-sends env tx (:remotes cfg))
+        q    (cond-> []
+               (not (nil? c)) (conj c)
+               (not (nil? ref)) (conj ref))]
+    (p/queue! r (into q (remove symbol?) (keys v)))
+    (when-not (empty? snds)
+      (p/queue-sends! r snds)
+      (schedule-sends! r))))
+
+(defn annotate-mutations
+  "Given a query expression annotate all mutations by adding a :mutator -> ident
+   entry to the metadata of each mutation expression in the query."
+  [tx ident]
+  (letfn [(annotate [expr ident]
+            (cond-> expr
+              (mutation? expr) (vary-meta assoc :mutator ident)))]
+    (into [] (map #(annotate % ident)) tx)))
+
+(defn transact!
+  "Given a reconciler or component run a transaction. tx is a parse expression
+   that should include mutations followed by any necessary read. The reads will
+   be used to trigger component re-rendering.
+
+   Example:
+
+     (om/transact! widget
+       '[(do/this!) (do/that!)
+         :read/this :read/that])"
+  ([x tx]
+   {:pre [(or (component? x)
+              (reconciler? x))
+          (vector? tx)]}
+   (let [tx (cond-> tx
+              (and (component? x) (satisfies? Ident x))
+              (annotate-mutations (get-ident x)))]
+     (if (reconciler? x)
+       (transact* x nil nil tx)
+       (do
+         (assert (iquery? x)
+           (str "transact! invoked by component " x
+             " that does not implement IQuery"))
+         (loop [p (parent x) x x tx tx]
+           (if (nil? p)
+             (let [r (get-reconciler x)]
+               (transact* r x nil (transform-reads r tx)))
+             (let [[x' tx] (if (satisfies? ITxIntercept p)
+                             [p (tx-intercept p tx)]
+                             [x tx])]
+               (recur (parent p) x' tx))))))))
+  ([r ref tx]
+   (transact* r nil ref tx)))
 
 ;; =============================================================================
 ;; Parser

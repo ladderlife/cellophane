@@ -262,8 +262,7 @@
         (dom/h3 nil (str "Props: " props))
         (dom/h3 nil (str "Shared: " shared))
         (dom/button
-          #js {;:onClick #(om/transact! this '[(my/test) :counter])
-               }
+          #js {:onClick #(cellophane/transact! this '[(my/test) :counter])}
           "Increment!")))))
 
 (def app-state (atom {:counter 0}))
