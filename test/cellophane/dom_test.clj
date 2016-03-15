@@ -138,6 +138,10 @@
                              :opacity 0.5
                              :width 100}) "zoom:1;opacity:0.5;width:100px;")))
 
+(deftest test-empty-styles-not-rendered
+  (is (= (dom/render-element (dom/assign-react-ids (dom/div {:style {}})))
+         "<div data-reactid=\".0\"></div>")))
+
 (deftest test-render-component-with-style
   (let [ctor (cellophane/factory ComponentWithStyle)]
     (is (= (dom/render-to-str (ctor))

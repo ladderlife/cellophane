@@ -223,7 +223,8 @@
     (true? value) (str " " (clojure.core/name name))
     (fn? value) ""
     (not value) ""
-    (= name :style) (xml-attribute name (format-styles value))
+    (= name :style) (cond->> (format-styles value)
+                      (not (empty? value)) (xml-attribute name))
     :else (xml-attribute name value)))
 
 (defn render-attr-map [attrs]
