@@ -430,7 +430,8 @@
             ref (:ref props)
             props {:cellophaneclj$reactRef   ref
                    :cellophaneclj$reactKey   react-key
-                   :cellophaneclj$value      (dissoc props :ref)
+                   :cellophaneclj$value      (cond-> props
+                                               (map? props) (dissoc :ref))
                    :cellophaneclj$mounted?   (atom false)
                    :cellophaneclj$path       (-> props meta :om-path)
                    :cellophaneclj$reconciler *reconciler*

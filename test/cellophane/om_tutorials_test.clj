@@ -147,4 +147,153 @@
                 </ul>
               </div>")))))
 
+;; =============================================================================
+;; Componentes, Identity & Normalization
+
+(def cian-init-data
+  {:list/one [{:name "John" :points 0}
+              {:name "Mary" :points 0}
+              {:name "Bob"  :points 0}]
+   :list/two [{:name "Mary" :points 0 :age 27}
+              {:name "Gwen" :points 0}
+              {:name "Jeff" :points 0}]})
+
+;; -----------------------------------------------------------------------------
+;; Parsing
+
+(defmulti cian-read cellophane/dispatch)
+
+(defn get-people [state key]
+  (let [st @state]
+    (into [] (map #(get-in st %)) (get st key))))
+
+(defmethod cian-read :list/one
+  [{:keys [state] :as env} key params]
+  {:value (get-people state key)})
+
+(defmethod cian-read :list/two
+  [{:keys [state] :as env} key params]
+  {:value (get-people state key)})
+
+(defmulti cian-mutate cellophane/dispatch)
+
+(defmethod cian-mutate 'points/increment
+  [{:keys [state]} _ {:keys [name]}]
+  {:action
+   (fn []
+     (swap! state update-in
+       [:person/by-name name :points]
+       inc))})
+
+(defmethod cian-mutate 'points/decrement
+  [{:keys [state]} _ {:keys [name]}]
+  {:action
+   (fn []
+     (swap! state update-in
+       [:person/by-name name :points]
+       #(let [n (dec %)] (if (neg? n) 0 n))))})
+
+;; -----------------------------------------------------------------------------
+;; Components
+
+(defui Person
+  static cellophane/Ident
+  (ident [this {:keys [name]}]
+    [:person/by-name name])
+  static cellophane/IQuery
+  (query [this]
+    '[:name :points :age])
+  Object
+  (render [this]
+    (println "Render Person" (-> this cellophane/props :name))
+    (let [{:keys [points name foo] :as props} (cellophane/props this)]
+      (dom/li nil
+        (dom/label nil (str name ", points: " points))
+        (dom/button
+          #js {:onClick
+               (fn [e]
+                 (cellophane/transact! this
+                   `[(points/increment ~props)]))}
+          "+")
+        (dom/button
+          #js {:onClick
+               (fn [e]
+                 (cellophane/transact! this
+                   `[(points/decrement ~props)]))}
+          "-")))))
+
+(def person (cellophane/factory Person {:keyfn :name}))
+
+(defui ListView
+  Object
+  (render [this]
+    ;(println "Render ListView" (-> this cellophane/path first))
+    (let [list (cellophane/props this)]
+      (apply dom/ul nil
+        (map person list)))))
+
+(def list-view (cellophane/factory ListView))
+
+(defui RootView
+  static cellophane/IQuery
+  (query [this]
+    (let [subquery (cellophane/get-query Person)]
+      `[{:list/one ~subquery} {:list/two ~subquery}]))
+  Object
+  (render [this]
+    (println "Render RootView")
+    (let [{:keys [list/one list/two]} (cellophane/props this)]
+      (apply dom/div nil
+        [(dom/h2 nil "List A")
+         (list-view one)
+         (dom/h2 nil "List B")
+         (list-view two)]))))
+
+(def cian-reconciler
+  (cellophane/reconciler
+    {:state  cian-init-data
+     :parser (cellophane/parser {:read cian-read :mutate cian-mutate})}))
+
+(deftest test-cian-tutorial
+  (let [c (cellophane/add-root! cian-reconciler RootView nil)]
+    (is (= (dom/render-to-str c)
+           (remove-whitespace "<div data-reactid=\".0\">
+                                 <h2 data-reactid=\".0.0\">List A</h2>
+                                 <ul data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one]\">
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John.0\">John, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John.2\">-</button>
+                                   </li>
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary.0\">Mary, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary.2\">-</button>
+                                   </li>
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob.0\">Bob, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob.2\">-</button>
+                                   </li>
+                                 </ul>
+                                 <h2 data-reactid=\".0.2\">List B</h2>
+                                 <ul data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two]\">
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary.0\">Mary, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary.2\">-</button>
+                                   </li>
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen.0\">Gwen, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen.2\">-</button>
+                                   </li>
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff.0\">Jeff, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff.2\">-</button>
+                                   </li>
+                                 </ul>
+                               </div>")))))
+
 
