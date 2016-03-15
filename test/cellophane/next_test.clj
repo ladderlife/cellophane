@@ -389,6 +389,26 @@
           idxs (p/index-root idxr IdxrLinkRoot)]
       (is (contains? idxs :prop->classes)))))
 
+(deftest test-reindex-instances
+  (let [r (cellophane/reconciler
+            {:state (atom nil)
+             :parser (cellophane/parser {:read (fn [_ _ _] {})})})
+        idxr (get-in r [:config :indexer])
+        ;; simulate mounting
+        _ (p/add-root! r RootComponent nil nil)
+        _ (p/index-component! idxr (->RootComponent nil nil #js {:cellophaneclj$reconciler r} nil))
+        indexes @(:indexes idxr)
+        classes (-> indexes :class->components keys)
+        cps (-> indexes :class-path->query keys)
+        c (first (get-in indexes [:class->components RootComponent]))]
+    (is (= (first classes) RootComponent))
+    (is (not (nil? (some #{[RootComponent ComponentA]} cps))))
+    ;; will reindex
+    (cellophane/set-query! c {:params {:component (cellophane/get-query ComponentB)}})
+    (let [indexes @(:indexes idxr)
+          cps (-> indexes :class-path->query keys)]
+      (is (not (nil? (some #{[RootComponent ComponentB]} cps)))))))
+
 (deftest test-reconciler-has-indexer
   (let [r (cellophane/reconciler
             {:state (atom nil)})]

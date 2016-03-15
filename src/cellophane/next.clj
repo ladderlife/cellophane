@@ -558,9 +558,8 @@
       (and qm (instance? clojure.lang.IObj ret)) (with-meta qm))))
 
 (defn- get-local-query-data [component]
-  ;; TODO: change when we implement `set-query!`
-  {:query  (query component)
-   :params (params component)})
+  (some-> (get-reconciler component)
+    :config :state deref ::queries (get component)))
 
 (defn get-unbound-query
   "Return the unbound query for a component."
@@ -608,7 +607,7 @@
     (assert (not (nil? m)) "get-ident invoked on component with nil props")
     (ident c m)))
 
-(declare full-query force ref->components)
+(declare full-query force ref->components reconciler? to-env schedule-sends!)
 
 (defn gather-sends
   [{:keys [parser] :as env} q remotes]
@@ -646,10 +645,88 @@
             (recur (next exprs) (conj tx' expr))))
         tx'))))
 
+(defn set-query!
+  "Change the query of a component. Takes a map containing :params and/or
+   :query. :params should be a map of new bindings and :query should be a query
+   expression. Will schedule a re-render as well as remote re-sends if
+   necessary."
+  ([x params&query]
+    (set-query! x params&query nil))
+  ([x {:keys [params query]} reads]
+   {:pre [(or (reconciler? x)
+              (component? x))
+          (or (not (nil? params))
+              (not (nil? query)))
+          (or (nil? reads)
+              (vector? reads))]}
+   (let [r    (if (component? x)
+                (get-reconciler x)
+                x)
+         c    (when (component? x) x)
+         root (:root @(:state r))
+         cfg  (:config r)
+         st   (:state cfg)
+         ;; id   (random-uuid)
+         ;; _    (.add (:history cfg) id @st)
+         ]
+     ;; (when-let [l (:logger cfg)]
+     ;;   (glog/info l
+     ;;     (str (when-let [ident (when (implements? Ident c)
+     ;;                             (ident c (props c)))]
+     ;;            (str (pr-str ident) " "))
+     ;;       (when (reconciler? x) "reconciler ")
+     ;;       (when query "changed query '" query ", ")
+     ;;       (when params "changed params " params " ")
+     ;;       (pr-str id))))
+     (swap! st update-in [:cellophane.next/queries (or c root)] merge
+       (merge (when query {:query query}) (when params {:params params})))
+     (when (and (not (nil? c)) (nil? reads))
+       (p/queue! r [c]))
+     (when-not (nil? reads)
+       (p/queue! r reads))
+     (p/reindex! r)
+     (let [rootq (if (not (nil? c))
+                   (full-query c)
+                   (when (nil? reads)
+                     (get-query root)))
+           sends (gather-sends (to-env cfg)
+                   (into (or rootq []) (transform-reads r reads)) (:remotes cfg))]
+       (when-not (empty? sends)
+         (p/queue-sends! r sends)
+         (schedule-sends! r)))
+     nil)))
+
+(defn update-query!
+  "Update a component's query and query parameters with a function."
+  ([component f]
+   (set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)})))
+  ([component f arg0]
+   (set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)}
+       arg0)))
+  ([component f arg0 arg1]
+   (set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)}
+       arg0 arg1)))
+  ([component f arg0 arg1 arg2]
+   (set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)}
+       arg0 arg1 arg2)))
+  ([component f arg0 arg1 arg2 arg3 & arg-rest]
+   (apply set-query! component
+     (f {:query  (get-unbound-query component)
+         :params (get-params component)}
+       arg0 arg1 arg2 arg3 arg-rest))))
+
 ;; =============================================================================
 ;; Reconciler API
 
-(declare reconciler? remove-root!)
+(declare remove-root!)
 
 (defn schedule-sends! [reconciler]
   (when (p/schedule-sends! reconciler)
