@@ -278,6 +278,14 @@
                @(:state component))]
      (get-in cst (if (sequential? k-or-ks) k-or-ks [k-or-ks])))))
 
+(defn react-set-state!
+  ([component new-state]
+   (react-set-state! component new-state nil))
+  ([component new-state cb]
+   {:pre [(component? component)]}
+   (set-state! component new-state)
+   (cb)))
+
 (defn update-state!
   ([component f]
    (set-state! component (f (get-state component))))
