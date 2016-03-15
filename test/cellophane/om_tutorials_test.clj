@@ -296,4 +296,209 @@
                                  </ul>
                                </div>")))))
 
+;; =============================================================================
+;; Queries with unions
 
+(def union-init-data
+  {:dashboard/items
+   [{:id 0 :type :dashboard/post
+     :author "Laura Smith"
+     :title "A Post!"
+     :content "Lorem ipsum dolor sit amet, quem atomorum te quo"
+     :favorites 0}
+    {:id 1 :type :dashboard/photo
+     :title "A Photo!"
+     :image "photo.jpg"
+     :caption "Lorem ipsum"
+     :favorites 0}
+    {:id 2 :type :dashboard/post
+     :author "Jim Jacobs"
+     :title "Another Post!"
+     :content "Lorem ipsum dolor sit amet, quem atomorum te quo"
+     :favorites 0}
+    {:id 3 :type :dashboard/graphic
+     :title "Charts and Stufff!"
+     :image "chart.jpg"
+     :favorites 0}
+    {:id 4 :type :dashboard/post
+     :author "May Fields"
+     :title "Yet Another Post!"
+     :content "Lorem ipsum dolor sit amet, quem atomorum te quo"
+     :favorites 0}]})
+
+(defui Post
+  static cellophane/IQuery
+  (query [this]
+    [:id :type :title :author :content])
+  Object
+  (render [this]
+    (let [{:keys [title author content] :as props} (cellophane/props this)]
+      (dom/div nil
+        (dom/h3 nil title)
+        (dom/h4 nil author)
+        (dom/p nil content)))))
+
+(def post (cellophane/factory Post))
+
+(defui Photo
+  static cellophane/IQuery
+  (query [this]
+    [:id :type :title :image :caption])
+  Object
+  (render [this]
+    (let [{:keys [title image caption]} (cellophane/props this)]
+      (dom/div nil
+        (dom/h3 nil (str "Photo: " title))
+        (dom/div nil image)
+        (dom/p nil "Caption: ")))))
+
+(def photo (cellophane/factory Photo))
+
+(defui Graphic
+  static cellophane/IQuery
+  (query [this]
+    [:id :type :title :image])
+  Object
+  (render [this]
+    (let [{:keys [title image]} (cellophane/props this)]
+      (dom/div nil
+        (dom/h3 nil (str "Graphic: " title))
+        (dom/div nil image)))))
+
+(def graphic (cellophane/factory Graphic))
+
+(defui DashboardItem
+  static cellophane/Ident
+  (ident [this {:keys [id type]}]
+    [type id])
+  static cellophane/IQuery
+  (query [this]
+    (zipmap
+      [:dashboard/post :dashboard/photo :dashboard/graphic]
+      (map #(conj % :favorites)
+        [(cellophane/get-query Post)
+         (cellophane/get-query Photo)
+         (cellophane/get-query Graphic)])))
+  Object
+  (render [this]
+    (let [{:keys [id type favorites] :as props} (cellophane/props this)]
+      (dom/li
+        #js {:style #js {:padding 10 :borderBottom "1px solid black"}}
+        (dom/div nil
+          (({:dashboard/post    post
+             :dashboard/photo   photo
+             :dashboard/graphic graphic} type)
+            (cellophane/props this)))
+        (dom/div nil
+          (dom/p nil (str "Favorites: " favorites))
+          (dom/button
+            #js {:onClick
+                 (fn [e]
+                   (cellophane/transact! this
+                     `[(dashboard/favorite {:ref [~type ~id]})]))}
+            "Favorite!"))))))
+
+(def dashboard-item (cellophane/factory DashboardItem))
+
+(defui Dashboard
+  static cellophane/IQuery
+  (query [this]
+    [{:dashboard/items (cellophane/get-query DashboardItem)}])
+  Object
+  (render [this]
+    (let [{:keys [dashboard/items]} (cellophane/props this)]
+      (apply dom/ul
+        #js {:style #js {:padding 0}}
+        (map dashboard-item items)))))
+
+(defmulti union-read cellophane/dispatch)
+
+(defmethod union-read :dashboard/items
+  [{:keys [state]} k _]
+  (let [st @state]
+    {:value (into [] (map #(get-in st %)) (get st k))}))
+
+(defmulti mutate cellophane/dispatch)
+
+(defmethod mutate 'dashboard/favorite
+  [{:keys [state]} k {:keys [ref]}]
+  {:action
+   (fn []
+     (swap! state update-in (conj ref :favorites) inc))})
+
+(def union-reconciler
+  (cellophane/reconciler
+    {:state  union-init-data
+     :parser (cellophane/parser {:read union-read :mutate mutate})}))
+
+
+(deftest test-unions-tutorial
+    (let [c (cellophane/add-root! union-reconciler Dashboard nil)]
+      (is (= (dom/render-to-str c)
+            (remove-whitespace
+              "<ul style=\"padding:0;\" data-reactid=\".0\">
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0].0\">A Post!</h3>
+                      <h4 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0].1\">Laura Smith</h4>
+                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0].2\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
+                    </div>
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].1.1\">Favorite!</button>
+                  </div>
+                </li>
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1].0\">Photo: A Photo!</h3>
+                      <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1].1\">photo.jpg</div>
+                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1].2\">Caption: </p>
+                    </div>
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].1.1\">Favorite!</button>
+                  </div>
+                </li>
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2].0\">Another Post!</h3>
+                      <h4 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2].1\">Jim Jacobs</h4>
+                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2].2\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
+                    </div>
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].1.1\">Favorite!</button>
+                  </div>
+                </li>
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0.$cellophane$om_tutorials_test$Graphic_[=2dashboard/items 3]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0.$cellophane$om_tutorials_test$Graphic_[=2dashboard/items 3].0\">Graphic: Charts and Stufff!</h3>
+                      <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0.$cellophane$om_tutorials_test$Graphic_[=2dashboard/items 3].1\">chart.jpg</div>
+                    </div>
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].1.1\">Favorite!</button>
+                  </div>
+                </li>
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4].0\">Yet Another Post!</h3>
+                      <h4 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4].1\">May Fields</h4>
+                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4].2\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
+                    </div>
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].1.1\">Favorite!</button>
+                  </div>
+                </li>
+              </ul>")))))
