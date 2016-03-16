@@ -77,17 +77,19 @@
 
 (deftest test-render-to-str
   (let [c ((cellophane/factory SimpleComponent))]
-    (is (= (dom/render-to-str c) "<div data-reactid=\".0\">Hello World</div>")))
+    (is (= (dom/render-to-str c) "<div><div data-reactid=\".0\">Hello World</div></div>")))
   (let [hello (cellophane/factory Hello)]
     (is (= (dom/render-to-str (hello {:text "Hello, world!"}))
-           "<p data-reactid=\".0\">Hello, world!</p>")))
+           "<div><p data-reactid=\".0\">Hello, world!</p></div>")))
   (let [children (cellophane/factory Children)]
     (is (= (dom/render-to-str (children))
-          (remove-whitespace "<div data-reactid=\".0\">
-                                <div data-reactid=\".0.0\">Foo</div>
-                                <div data-reactid=\".0.1\">Bar</div>
-                                <div data-reactid=\".0.2\">Bar</div>
-                                <div data-reactid=\".0.3\">Woz</div>
+          (remove-whitespace "<div>
+                                <div data-reactid=\".0\">
+                                  <div data-reactid=\".0.0\">Foo</div>
+                                  <div data-reactid=\".0.1\">Bar</div>
+                                  <div data-reactid=\".0.2\">Bar</div>
+                                  <div data-reactid=\".0.3\">Woz</div>
+                                </div>
                               </div>")))))
 
 (deftest test-format-react-attrs
@@ -145,7 +147,7 @@
 (deftest test-render-component-with-style
   (let [ctor (cellophane/factory ComponentWithStyle)]
     (is (= (dom/render-to-str (ctor))
-          "<div style=\"text-align:center;margin-left:10px;\" data-reactid=\".0\"></div>"))))
+          "<div><div style=\"text-align:center;margin-left:10px;\" data-reactid=\".0\"></div></div>"))))
 
 ;; Simple nested `defui`s
 
@@ -165,8 +167,10 @@
 (deftest test-simple-nested-defuis
   (let [ctor (cellophane/factory SimpleNestedParent)]
     (is (= (dom/render-to-str (ctor))
-           (remove-whitespace "<div data-reactid=\".0\">
-                                 <div data-reactid=\".0.0\">child</div>
+           (remove-whitespace "<div>
+                                 <div data-reactid=\".0\">
+                                   <div data-reactid=\".0.0\">child</div>
+                                 </div>
                                </div>")))))
 
 
@@ -231,26 +235,28 @@
   (let [c (cellophane/add-root! simple-tree-reconciler SimpleTree nil)]
     (is (= (dom/render-to-str c)
           (remove-whitespace
-            "<ul data-reactid=\".0\">
-               <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree]\">
-                 <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].0\">Node value:1</div>
-                 <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1\">
-                   <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0]\">
-                     <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].0\">Node value:2</div>
-                     <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1\">
-                       <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0]\">
-                         <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].0\">Node value:3</div>
-                         <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].1\"></ul>
-                       </li>
-                     </ul>
-                   </li>
-                   <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1]\">
-                     <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].0\">Node value:4</div>
-                     <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].1\"></ul>
-                   </li>
-                 </ul>
-               </li>
-             </ul>")))))
+            "<div>
+               <ul data-reactid=\".0\">
+                 <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree]\">
+                   <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].0\">Node value:1</div>
+                   <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1\">
+                     <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0]\">
+                       <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].0\">Node value:2</div>
+                       <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1\">
+                         <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0]\">
+                           <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].0\">Node value:3</div>
+                           <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 0 =2children 0].1\"></ul>
+                         </li>
+                       </ul>
+                     </li>
+                     <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1]\">
+                       <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].0\">Node value:4</div>
+                       <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1.$cellophane$dom_test$SimpleNode_[=2tree =2children 1].1\"></ul>
+                     </li>
+                   </ul>
+                 </li>
+               </ul>
+             </div>")))))
 
 (defn MultipleTextChildren []
   (dom/div nil
@@ -316,10 +322,12 @@
 (deftest test-shared
   (let [c (cellophane/add-root! reconciler Home nil)]
     (is (= (dom/render-to-str c)
-           (remove-whitespace "<div data-reactid=\".0\">
-                                 <h3 data-reactid=\".0.0\">Props: {:counter 0}</h3>
-                                 <h3 data-reactid=\".0.1\">Shared: {:counter 0}</h3>
-                                 <button data-reactid=\".0.2\">Increment!</button>
+           (remove-whitespace "<div>
+                                 <div data-reactid=\".0\">
+                                   <h3 data-reactid=\".0.0\">Props: {:counter 0}</h3>
+                                   <h3 data-reactid=\".0.1\">Shared: {:counter 0}</h3>
+                                   <button data-reactid=\".0.2\">Increment!</button>
+                                 </div>
                                </div>")))
     (is (= (cellophane/force-root-render! reconciler) nil))))
 

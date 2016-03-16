@@ -251,8 +251,9 @@
 (defn render-element
   "Render an tag vector as a HTML element string."
   [{:keys [tag attrs react-id children]}]
-  (assert react-id)
-  (let [attrs (assoc attrs :data-reactid (react-id-str react-id))]
+  (let [attrs (cond-> attrs
+                (some? react-id)
+                (assoc :data-reactid (react-id-str react-id)))]
     (if (container-tag? tag (seq children))
       (str "<" tag (render-attr-map attrs) ">"
         (apply str (clojure.core/map p/-render-to-string children))
@@ -350,5 +351,9 @@
 (defn render-to-str [class]
   {:pre [(satisfies? p/IReactComponent class)]}
   (let [element (p/-render class)
-        element (assign-react-ids element)]
+        element (assign-react-ids element)
+        ;; wrap in extra div so that React checksum is correct
+        ;; http://stackoverflow.com/a/33521172/3417023
+        element (cellophane.dom/div nil element)]
     (p/-render-to-string element)))
+
