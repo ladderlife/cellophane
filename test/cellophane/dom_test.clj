@@ -330,10 +330,3 @@
                                  </div>
                                </div>")))
     (is (= (cellophane/force-root-render! reconciler) nil))))
-
-;; ===================================================================
-;; Checksums, react-ids
-
-(deftest test-checksums
-  (are [markup chk] (= (dom/checksum markup) chk)
-    "<div data-reactid=\".18h0b0ubv28\"></div>" 34999398))
