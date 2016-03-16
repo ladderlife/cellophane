@@ -4,9 +4,20 @@ Server-side rendering for Om Next components
 
 ## Installation
 
-Add Cellophane to your dependencies:
+Leiningen dependency information:
+
+[![Clojars Project](https://clojars.org/com.ladderlife/cellophane/latest-version.svg)](https://clojars.org/com.ladderlife/cellophane)
 
 
+Maven dependency information:
+
+```xml
+<dependency>
+  <groupId>com.ladderlife</groupId>
+  <artifactId>cellophane</artifactId>
+  <version>0.1.0</version>
+</dependency>
+```
 
 ## Guide
 
