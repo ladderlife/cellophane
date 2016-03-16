@@ -26,7 +26,7 @@ There's a full stack TodoMVC example with server-side rendering in [fullstack_ex
 
 ## Limitations
 
-Because Cellophane's `defui` generates Clojure records, `:require`ing other namespaces is not enough to use those components. Using `:import` is also required, as demonstrated below:
+Because Cellophane's `defui` generates Clojure records (which under the hood are Java classes), `:require`ing other namespaces is not enough to use those components. Using `:import` is also required, as demonstrated below:
 
 ```clojure
 (ns my-ns
