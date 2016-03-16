@@ -6,7 +6,7 @@
   :repositories [["clojars" {:sign-releases false}]]
   :dependencies [[org.clojure/clojure "1.8.0"]
 
-                 [org.omcljs/om "1.0.0-alpha30" :scope "test"]]
+                 [org.omcljs/om "1.0.0-alpha31" :scope "test"]]
 
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :source-paths ["src" "test"]
