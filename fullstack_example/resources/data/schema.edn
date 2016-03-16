@@ -1,0 +1,24 @@
+[
+ ;; Todos
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :todo/created
+  :db/valueType :db.type/instant
+  :db/cardinality :db.cardinality/one
+  :db/doc "A todo's creation timestamp"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :todo/title
+  :db/valueType :db.type/string
+  :db/cardinality :db.cardinality/one
+  :db/doc "A todo's description"
+  :db.install/_attribute :db.part/db}
+
+ {:db/id #db/id[:db.part/db]
+  :db/ident :todo/completed
+  :db/valueType :db.type/boolean
+  :db/cardinality :db.cardinality/one
+  :db/doc "A todo's state"
+  :db.install/_attribute :db.part/db}
+ ]
