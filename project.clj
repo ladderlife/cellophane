@@ -4,9 +4,9 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :repositories [["clojars" {:sign-releases false}]]
-  :dependencies [[org.clojure/clojure "1.8.0"]
+  :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
 
-                 [org.omcljs/om "1.0.0-alpha31" :scope "test"]]
+                 [org.omcljs/om "1.0.0-alpha31"]]
 
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :source-paths ["src" "test"]
