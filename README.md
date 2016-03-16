@@ -2,6 +2,18 @@
 
 Server-side rendering for Om Next components
 
+## Contents
+
+- [Installation](#installation)
+- [Guide](#guide)
+  - [Getting started](#getting-started)
+  - [Rendering components server-side](#rendering-components-server-side)
+    - [Simple case (no reconciler)](#simple-case-no-reconciler)
+    - [Full-blown case](#full-blown-case)
+- [Limitations](#limitations)
+- [Copyright & License](#copyright--license)
+
+
 ## Installation
 
 Leiningen dependency information:
