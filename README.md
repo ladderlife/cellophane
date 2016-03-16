@@ -59,7 +59,7 @@ The simplest case is to feed `dom/render-to-str` a component instance created wi
 
 The full-blown case is shown below, and includes parser and reconciler code. The following code is directly taken from the Om Next Quick Start.
 
-A full stack TodoMVC example with server-side rendering in [fullstack_example](./fullstack_example).
+A full stack TodoMVC example with server-side rendering can be found in [fullstack_example](./fullstack_example).
 
 ```clojure
 (def animals-app-state
