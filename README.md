@@ -57,7 +57,7 @@ The simplest case is to feed `dom/render-to-str` a component instance created wi
 
 #### Full-blown case
 
-The full-blown case is shown below, and includes parser and reconciler code. The following code is directly taken from the Om Next quickstart.
+The full-blown case is shown below, and includes parser and reconciler code. The following code is directly taken from the Om Next Quick Start.
 
 A full stack TodoMVC example with server-side rendering in [fullstack_example](./fullstack_example).
 
