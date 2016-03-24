@@ -374,6 +374,7 @@
 ;; define a function?
 (defn defui* [name forms]
   (let [{:keys [dt statics]} (collect-statics forms)
+        [other-protocols obj-dt] (split-with (complement '#{Object}) dt)
         define-class-methods (when-not (empty? (:protocols statics))
                                `(do
                                   ~@(->> (partition 2 (:protocols statics))
@@ -389,7 +390,9 @@
        (defrecord ~name [~'state ~'refs props# children#]
          ;; TODO: non-lifecycle methods defined in the JS prototype
          cellophane.protocols/IReactLifecycle
-         ~@(rest (reshape dt reshape-map))
+         ~@(rest (reshape obj-dt reshape-map))
+
+         ~@other-protocols
 
          ~@(:protocols statics)
 
