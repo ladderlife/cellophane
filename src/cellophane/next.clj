@@ -1192,11 +1192,17 @@
       ;; map case
       (if (= '[*] query)
         data
-        (let [{props false joins true} (group-by #(or (join? %) (ident? %)) query)
+        (let [{props false joins true} (group-by #(or (join? %)
+                                                      (ident? %)
+                                                      (and (seq? %)
+                                                           (ident? (first %))))
+                                         query)
               props (mapv #(cond-> % (seq? %) first) props)]
           (loop [joins (seq joins) ret {}]
             (if-not (nil? joins)
               (let [join        (first joins)
+                    join        (cond-> join
+                                  (seq? join) first)
                     join        (cond-> join (ident? join) (hash-map '[*]))
                     [key sel]   (join-entry join)
                     recurse?    (recursion? sel)
