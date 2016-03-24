@@ -131,10 +131,13 @@
     (map? x)))
 
 (defn- focused-join [expr ks]
-  (cond
-    (map? expr) {(ffirst expr) (focus-query (-> expr first second) ks)}
-    (seq? expr) (list (focused-join (first expr) ks) (second expr))
-    :else       expr))
+  (let [expr-meta (meta expr)
+        expr' (cond
+                (map? expr) {(ffirst expr) (focus-query (-> expr first second) ks)}
+                (seq? expr) (list (focused-join (first expr) ks) (second expr))
+                :else       expr)]
+    (cond-> expr'
+      (some? expr-meta) (with-meta expr-meta))))
 
 (defn focus-query
   "Given a query, focus it along the specified path.
