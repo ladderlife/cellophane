@@ -330,3 +330,7 @@
                                  </div>
                                </div>")))
     (is (= (cellophane/force-root-render! reconciler) nil))))
+
+(deftest test-render-to-str-elements
+  (are [elem res] (= (dom/render-to-str elem) res)
+    (dom/div nil "foo") "<div><div data-reactid=\".0\">foo</div></div>"))

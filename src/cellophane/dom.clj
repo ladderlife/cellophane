@@ -335,9 +335,11 @@
                                          i)]
                           (assign-react-ids c (conj id react-id)))) children))))))
 
-(defn render-to-str [class]
-  {:pre [(satisfies? p/IReactComponent class)]}
-  (let [element (p/-render class)
+(defn render-to-str [x]
+  {:pre [(or (satisfies? p/IReactComponent x)
+             (satisfies? p/IReactDOMElement x))]}
+  (let [element (cond-> x
+                  (satisfies? p/IReactComponent x) p/-render)
         element (assign-react-ids element)
         ;; wrap in extra div so that React checksum is correct
         ;; http://stackoverflow.com/a/33521172/3417023
