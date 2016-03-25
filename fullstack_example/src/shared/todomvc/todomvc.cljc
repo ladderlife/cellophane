@@ -6,11 +6,10 @@
                 :clj [[cellophane.next :as om :refer [defui]]
                       [cellophane.dom :as dom]])
             [todomvc.util :as util :refer [hidden pluralize]]
-            [todomvc.item :as item #?@(:cljs [:refer [TodoItem]])]
+            [todomvc.item :as item]
             [todomvc.client-parser :as p])
   #?(:cljs (:import [goog History]
-                    [goog.history EventType])
-     :clj (:import [todomvc.item TodoItem])))
+                    [goog.history EventType])))
 
 ;; -----------------------------------------------------------------------------
 ;; Components
@@ -50,7 +49,7 @@
 (defui Todos
   static om/IQueryParams
   (params [this]
-    {:todo-item (om/get-query TodoItem)})
+    {:todo-item (om/get-query todomvc.item.TodoItem)})
 
   static om/IQuery
   (query [this]
