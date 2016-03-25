@@ -221,6 +221,15 @@
              (cellophane/react-ref c "foo"))
            ReactRefsChild))))
 
+(deftest test-dom-node
+  (let [factory (cellophane/factory ReactRefsParent)
+        c (factory)]
+    (p/-render c)
+    (is (instance? cellophane.dom.Element (dom/node c)))
+    (is (instance? cellophane.dom.Element (dom/node c "foo")))
+    (is (= (dom/render-element (dom/node c "foo"))
+           "<div>some text</div>"))))
+
 (defui ClassPathChild
   static cellophane/IQuery
   (query [this]

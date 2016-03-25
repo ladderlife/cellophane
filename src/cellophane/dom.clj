@@ -346,3 +346,11 @@
         element (cellophane.dom/div nil element)]
     (p/-render-to-string element)))
 
+(defn node
+  "Returns the dom node associated with a component's React ref."
+  ([component]
+   {:pre [(satisfies? p/IReactComponent component)]}
+   (p/-render component))
+  ([component name]
+   {:pre [(satisfies? p/IReactComponent component)]}
+   (some-> @(:refs component) (get name) p/-render)))
