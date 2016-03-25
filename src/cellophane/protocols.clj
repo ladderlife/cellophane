@@ -11,6 +11,7 @@
   (-render [this] "must return a valid ReactDOMElement."))
 
 (defprotocol IReactLifecycle
+  (shouldComponentUpdate [this next-props next-state])
   (initLocalState [this])
   (componentWillReceiveProps [this next-props])
   (componentWillUpdate [this next-props next-state])
