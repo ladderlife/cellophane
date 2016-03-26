@@ -236,7 +236,7 @@
   (str "." (str/join "." react-id)))
 
 (defn render-element
-  "Render an tag vector as a HTML element string."
+  "Render a tag vector as a HTML element string."
   [{:keys [tag attrs react-id children]}]
   (let [attrs (cond-> attrs
                 (some? react-id)
@@ -270,7 +270,7 @@
 
 (defn element
   "Creates a dom node."
-  [{:keys [tag attrs children] :as elem}]
+  [{:keys [tag attrs react-key children] :as elem}]
                                         ;{:post [(valid-element? %)]}
   (assert (name tag))
   (assert (or (nil? attrs) (map? attrs)) (format "elem %s attrs invalid" elem))
@@ -297,12 +297,14 @@
                           (filter identity)))]
     (map->Element {:tag (name tag)
                    :attrs attrs
+                   :react-key react-key
                    :children children})))
 
 (defn gen-tag-fn [tag]
   `(defn ~tag [~'attrs & ~'children]
      (element {:tag (quote ~tag)
-               :attrs (dissoc ~'attrs :ref)
+               :attrs (dissoc ~'attrs :ref :key)
+               :react-key (:key ~'attrs)
                :children ~'children})))
 
 (defmacro gen-all-tags []
@@ -322,9 +324,7 @@
 
 (defn assign-react-ids
   ([elem]
-   (let [id (or (wrap-user-provided-key (:react-key elem))
-              0)]
-     (assign-react-ids elem [id])))
+   (assign-react-ids elem [0]))
   ([elem id]
    (assert (vector? id))
    (let [elem (assoc elem :react-id id)]

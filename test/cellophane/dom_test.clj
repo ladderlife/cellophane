@@ -334,3 +334,13 @@
 (deftest test-render-to-str-elements
   (are [elem res] (= (dom/render-to-str elem) res)
     (dom/div nil "foo") "<div><div data-reactid=\".0\">foo</div></div>"))
+
+(deftest react-key-in-elements
+  (is (= (:react-key (dom/div {:key "foo"})) "foo"))
+  (is (= (:attrs (dom/div {:key "foo"})) {}))
+  (is (= (:react-key (dom/div nil)) nil))
+  (is (= (dom/render-to-str (dom/div {:key "foo"}))
+        "<div><div data-reactid=\".0\"></div></div>"))
+  (is (= (dom/render-to-str (dom/div nil (dom/div #js {:key "foo"})))
+        "<div><div data-reactid=\".0\"><div data-reactid=\".0.$foo\"></div></div></div>")))
+
