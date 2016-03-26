@@ -344,3 +344,7 @@
   (is (= (dom/render-to-str (dom/div nil (dom/div #js {:key "foo"})))
         "<div><div data-reactid=\".0\"><div data-reactid=\".0.$foo\"></div></div></div>")))
 
+(deftest test-non-string-attributes
+  (is (= (dom/render-to-str (dom/div {:class 3}))
+        "<div><div class=\"3\" data-reactid=\".0\"></div></div>")))
+

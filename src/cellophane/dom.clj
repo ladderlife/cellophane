@@ -212,7 +212,8 @@
     (not value) ""
     (= name :style) (cond->> (format-styles value)
                       (not (empty? value)) (xml-attribute name))
-    :else (xml-attribute name value)))
+    :else (xml-attribute name (cond-> value
+                                (number? value) str))))
 
 (defn render-attr-map [attrs]
   (apply str
