@@ -98,7 +98,9 @@
     {:className "foo"} " class=\"foo\""
     {:srcLang "en"} " srclang=\"en\""
     {:acceptCharset "ISO-8859-1"} " accept-charset=\"ISO-8859-1\""
-    {:placeholder "Title"} " placeholder=\"Title\""))
+    {:placeholder "Title"} " placeholder=\"Title\""
+    ;; svg xlink:stuff
+    {:xlinkActuate "foo"} " xlink:actuate=\"foo\""))
 
 (deftest test-ref-is-elided-in-props
   (is (= (dom/render-element

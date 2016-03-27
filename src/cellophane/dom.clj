@@ -191,13 +191,27 @@
     "spellCheck" "srcDoc" "srcLang" "srcSet" "tabIndex" "useMap" })
 
 (def kebab-case-attrs
-  #{"acceptCharset" "httpEquiv"})
+  #{"acceptCharset" "httpEquiv" "fillOpacity" "fontFamily" "fontSize"
+    "markerEnd" "markerMid" "markerStart" "stopColor" "stopOpacity"
+    "strokeDasharray" "strokeLinecap" "strokeOpacity" "strokeWidth"
+    "textAnchor"})
 
-(defn camel->kebab-case [s]
-  (->> (str/split s #"(?=[A-Z])")
-    (clojure.core/map #(reduce str %))
-    (clojure.core/map str/lower-case)
-    (str/join "-")))
+(def colon-between-attrs
+  #{"xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole"
+    "xlinkShow" "xlinkTitle" "xlinkType" "xmlBase" "xmlLang" "xmlSpace"})
+
+(defn camel->other-case [sep]
+  (fn [s]
+    (->> (str/split s #"(?=[A-Z])")
+      (clojure.core/map #(reduce str %))
+      (clojure.core/map str/lower-case)
+      (str/join sep))))
+
+(def camel->kebab-case
+  (camel->other-case "-"))
+
+(def camel->colon-between
+  (camel->other-case ":"))
 
 (defn coerce-attr-key [k]
   (cond
@@ -206,6 +220,7 @@
     ;; special cases
     (= k "className") "class"
     (= k "htmlFor") "for"
+    (contains? colon-between-attrs k) (camel->colon-between k)
     :else k))
 
 (defn escape-html
