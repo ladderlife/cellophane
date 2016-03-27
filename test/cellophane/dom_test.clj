@@ -348,3 +348,27 @@
   (is (= (dom/render-to-str (dom/div {:class 3}))
         "<div><div class=\"3\" data-reactid=\".0\"></div></div>")))
 
+(defui NilChild
+  Object
+  (render [this]
+    nil))
+
+(def nil-child-factory (cellophane/factory NilChild))
+
+(defui NilParent
+  Object
+  (render [this]
+    (dom/div nil
+      "foo"
+      (nil-child-factory))))
+
+(deftest test-nil-children
+  (is (= (dom/render-to-str (nil-child-factory))
+         "<div><noscript data-reactid=\".0\"></noscript></div>"))
+  (is (= (dom/render-to-str ((cellophane/factory NilParent)))
+        (remove-whitespace "<div>
+                              <div data-reactid=\".0\"><span data-reactid=\".0.0\">foo</span>
+                                <noscript data-reactid=\".0.1\"></noscript>
+                              </div>
+                            </div>"))))
+

@@ -267,7 +267,10 @@
   [s]
   (map->Text {:s s}))
 
-(declare span)
+(declare span noscript)
+
+(defn nil-element []
+  (noscript nil))
 
 (defn element
   "Creates a dom node."
@@ -283,8 +286,11 @@
                                    (satisfies? p/IReactDOMElement c) c
 
                                    (satisfies? p/IReactComponent c)
-                                   (assoc (p/-render c) :react-key
-                                     (some-> (p/-props c) :cellophaneclj$reactKey))
+                                   (let [rendered (if-let [element (p/-render c)]
+                                                    element
+                                                    (nil-element))]
+                                     (assoc rendered :react-key
+                                       (some-> (p/-props c) :cellophaneclj$reactKey)))
 
                                    (or (string? c) (number? c))
                                    (let [c (cond-> c (number? c) str)]
@@ -339,8 +345,10 @@
 (defn render-to-str [x]
   {:pre [(or (satisfies? p/IReactComponent x)
              (satisfies? p/IReactDOMElement x))]}
-  (let [element (cond-> x
-                  (satisfies? p/IReactComponent x) p/-render)
+  (let [element (if-let [element (cond-> x
+                                   (satisfies? p/IReactComponent x) p/-render)]
+                  element
+                  (nil-element))
         element (assign-react-ids element)
         ;; wrap in extra div so that React checksum is correct
         ;; http://stackoverflow.com/a/33521172/3417023
