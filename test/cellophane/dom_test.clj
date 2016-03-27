@@ -123,6 +123,12 @@
                 :type "text"})
     "<input placeholder=\"some text\" id=\"stuff\" type=\"text\" data-reactid=\".0\">"))
 
+(deftest test-only-supported-attrs-rendered
+  (are [element markup] (= (dom/render-to-str element) (remove-whitespace markup))
+    (dom/div #js {:not-supported "foo"}) "<div><div data-reactid=\".0\"></div></div>"
+    (dom/div {:className "stuff" :class "other"}) "<div><div class=\"stuff\" data-reactid=\".0\"></div></div>"
+    (dom/div {:media :stuff}) "<div><div data-reactid=\".0\"></div></div>"))
+
 (def styles
   #js {:textAlign "center"
        :marginLeft "10px"})
@@ -345,7 +351,7 @@
         "<div><div data-reactid=\".0\"><div data-reactid=\".0.$foo\"></div></div></div>")))
 
 (deftest test-non-string-attributes
-  (is (= (dom/render-to-str (dom/div {:class 3}))
+  (is (= (dom/render-to-str (dom/div {:className 3}))
         "<div><div class=\"3\" data-reactid=\".0\"></div></div>")))
 
 (defui NilChild

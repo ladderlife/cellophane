@@ -143,6 +143,36 @@
     option
     select])
 
+(def supported-attrs
+  #{;; HTML
+    "accept" "acceptCharset" "accessKey" "action" "allowFullScreen" "allowTransparency" "alt"
+    "async" "autoComplete" "autoFocus" "autoPlay" "capture" "cellPadding" "cellSpacing" "challenge"
+    "charSet" "checked" "classID" "className" "colSpan" "cols" "content" "contentEditable"
+    "contextMenu" "controls" "coords" "crossOrigin" "data" "dateTime" "default" "defer" "dir"
+    "disabled" "download" "draggable" "encType" "form" "formAction" "formEncType" "formMethod"
+    "formNoValidate" "formTarget" "frameBorder" "headers" "height" "hidden" "high" "href" "hrefLang"
+    "htmlFor" "httpEquiv" "icon" "id" "inputMode" "integrity" "is" "keyParams" "keyType" "kind" "label"
+    "lang" "list" "loop" "low" "manifest" "marginHeight" "marginWidth" "max" "maxLength" "media"
+    "mediaGroup" "method" "min" "minLength" "multiple" "muted" "name" "noValidate" "nonce" "open"
+    "optimum" "pattern" "placeholder" "poster" "preload" "radioGroup" "readOnly" "rel" "required"
+    "reversed" "role" "rowSpan" "rows" "sandbox" "scope" "scoped" "scrolling" "seamless" "selected"
+    "shape" "size" "sizes" "span" "spellCheck" "src" "srcDoc" "srcLang" "srcSet" "start" "step" "style" "summary"
+    "tabIndex" "target" "title" "type" "useMap" "value" "width" "wmode" "wrap"
+    ;; RDF
+    "about" "datatype" "inlist" "prefix" "property" "resource" "typeof" "vocab"
+    ;; SVG
+    "clipPath" "cx" "cy" "d" "dx" "dy" "fill" "fillOpacity" "fontFamily"
+    "fontSize" "fx" "fy" "gradientTransform" "gradientUnits" "markerEnd"
+    "markerMid" "markerStart" "offset" "opacity" "patternContentUnits"
+    "patternUnits" "points" "preserveAspectRatio" "r" "rx" "ry" "spreadMethod"
+    "stopColor" "stopOpacity" "stroke" "strokeDasharray" "strokeLinecap"
+    "strokeOpacity" "strokeWidth" "textAnchor" "transform" "version"
+    "viewBox" "x1" "x2" "x" "xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole"
+    "xlinkShow" "xlinkTitle" "xlinkType" "xmlBase" "xmlLang" "xmlSpace" "y1" "y2" "y"
+
+    ;; Special case
+    "data-reactid"})
+
 (def no-suffix
   #{"animationIterationCount" "boxFlex" "boxFlexGroup" "boxOrdinalGroup"
     "columnCount" "fillOpacity" "flex" "flexGrow" "flexPositive" "flexShrink"
@@ -205,15 +235,19 @@
                 (str s (camel->kebab-case k) ":" (coerce-value k v) ";")))
       "" styles)))
 
-(defn render-attribute [[name value]]
+(defn render-attribute [[key value]]
   (cond
-    (true? value) (str " " (clojure.core/name name))
     (fn? value) ""
     (not value) ""
-    (= name :style) (cond->> (format-styles value)
-                      (not (empty? value)) (xml-attribute name))
-    :else (xml-attribute name (cond-> value
-                                (number? value) str))))
+    (= key :style) (cond->> (format-styles value)
+                      (not (empty? value)) (xml-attribute key))
+    ;; TODO: not sure if we want to limit values to strings/numbers
+    (and (contains? supported-attrs (name key))
+         (or (string? value) (number? value)))
+    (xml-attribute key (cond-> value
+                         (or (keyword? value)
+                             (number? value)) str))
+    :else ""))
 
 (defn render-attr-map [attrs]
   (apply str
