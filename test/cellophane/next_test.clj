@@ -478,11 +478,11 @@
 ;; Remote test
 
 (defn remote-read
-  [{:keys [state]} k _]
+  [{:keys [state query]} k _]
   (assert (= k :some/list))
   (let [st @state]
     (if (contains? st k)
-      {:value (get st k)}
+      {:value (cellophane/db->tree query (get st k) st)}
       {:remote true})))
 
 (defui RemotePerson

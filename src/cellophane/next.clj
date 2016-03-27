@@ -1381,13 +1381,11 @@
                                                (when (:shared-fn config)
                                                  ((:shared-fn config) data)))
                                 *instrument* (:instrument config)]
-                        (let [c (if-let [c' @ret]
-                                  c'
-                                  (rctor data))]
+                        ;; TODO: think of ways not to create so many instances
+                        (let [c (rctor data)]
                           (p/-render c)
-                          (when (and (nil? @ret) (not (nil? c)))
-                            (swap! state assoc :root c)
-                            (reset! ret c)))))
+                          (swap! state assoc :root c)
+                          (reset! ret c))))
             parsef  (fn []
                       (let [sel (get-query (or @ret root-class))]
                         (assert (or (nil? sel) (vector? sel))
@@ -1425,7 +1423,7 @@
                      (send-cb res nil))
                     ([res query]
                      (merge! this res query)
-                     (renderf ((:parser config) env sel)))))))))
+                     (parsef))))))))
         @ret)))
 
   (remove-root! [_ target]
