@@ -339,7 +339,7 @@
                                                     element
                                                     (nil-element))]
                                      (assoc rendered :react-key
-                                       (some-> (p/-props c) :cellophaneclj$reactKey)))
+                                       (some-> (:props c) :cellophaneclj$reactKey)))
 
                                    (or (string? c) (number? c))
                                    (let [c (cond-> c (number? c) str)]

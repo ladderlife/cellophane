@@ -235,7 +235,7 @@
 
 (defn props [component]
   {:pre [(component? component)]}
-  (:cellophaneclj$value (p/-props component)))
+  (-> component :props :cellophaneclj$value))
 
 (defn computed
   "Add computed properties to props."
@@ -387,7 +387,7 @@
                                             (cons (symbol (str "cellophane.next/class-" (first impl)))
                                               (cons name (rest impl)))))))))]
     `(do
-       (defrecord ~name [~'state ~'refs props# children#]
+       (defrecord ~name [~'state ~'refs ~'props children#]
          ;; TODO: non-lifecycle methods defined in the JS prototype
          cellophane.protocols/IReactLifecycle
          ~@(rest (reshape obj-dt reshape-map))
@@ -401,15 +401,14 @@
           children#)
 
          cellophane.protocols/IReactComponent
-         (~'-props [this#]
-          props#)
          (~'-render [this#]
-          (reset! (:cellophaneclj$mounted? props#) true)
           ;; TODO: circle back. where should this exception be caught?
           (try
             (p/render this#)
             (catch AbstractMethodError e#
               (println "abstrctmethoderror")))))
+          (when-not @(:cellophaneclj$mounted? ~'props)
+            (swap! (:cellophaneclj$mounted? ~'props) not))
 
        ~define-class-methods)))
 
@@ -470,7 +469,7 @@
         component)))))
 
 (defn- get-prop [c prop]
-  (-> c p/-props prop))
+  (-> c :props prop))
 
 (defn- mounted? [c]
   {:pre [(component? c)]}
