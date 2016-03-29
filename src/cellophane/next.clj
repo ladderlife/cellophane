@@ -347,7 +347,14 @@
                      cellophane.next/*shared*     (cellophane.next/shared this#)
                      cellophane.next/*instrument* (cellophane.next/instrument this#)
                      cellophane.next/*parent*     this#]
-            ~@body))))}})
+            ~@body))))}
+   :defaults
+   `{~'componentWillMount
+     ([this#])
+     ~'componentDidMount
+     ([this#])
+     ~'render
+     ([this#])}})
 
 (defn reshape [dt {:keys [reshape defaults]}]
   (letfn [(reshape* [x]
@@ -402,13 +409,14 @@
 
          cellophane.protocols/IReactComponent
          (~'-render [this#]
-          ;; TODO: circle back. where should this exception be caught?
-          (try
-            (p/render this#)
-            (catch AbstractMethodError e#
-              (println "abstrctmethoderror")))))
           (when-not @(:cellophaneclj$mounted? ~'props)
             (swap! (:cellophaneclj$mounted? ~'props) not))
+          (p/componentWillMount this#)
+          (p/render this#)
+          (p/componentDidMount this#)
+          ;; simulate re-render
+          ;; TODO: use the actual `reconcile!` implementation, or actually re-render somehow
+          (p/render this#)))
 
        ~define-class-methods)))
 

@@ -379,3 +379,63 @@
                               </div>
                             </div>"))))
 
+(defui CLPHN-3-Component-1
+  Object
+  (initLocalState [this]
+    {:a 1})
+  (componentWillMount [this]
+    (cellophane/update-state! this update-in [:a] inc))
+  (render [this]
+    (dom/div nil (str "a: " (cellophane/get-state this :a)))))
+
+(defui CLPHN-3-Component-2
+  Object
+  (initLocalState [this]
+    {:a 1})
+  (componentWillMount [this]
+    (cellophane/update-state! this update-in [:a] inc))
+  (componentDidMount [this]
+    (cellophane/update-state! this update-in [:a] * 10))
+  (render [this]
+    (dom/div nil (str "a: " (cellophane/get-state this :a)))))
+
+(defui CLPHN-3-Child
+  Object
+  (initLocalState [this]
+    {:a 1})
+  (componentWillMount [this]
+    (cellophane/update-state! this update-in [:a] inc))
+  (componentDidMount [this]
+    (cellophane/update-state! this update-in [:a] inc))
+  (render [this]
+    (dom/div nil (str "child a: " (cellophane/get-state this :a)))))
+
+(def clphn3-child (cellophane/factory CLPHN-3-Child))
+
+(defui CLPHN-3-Parent
+  Object
+  (initLocalState [this]
+    {:a 2})
+  (componentWillMount [this]
+    (cellophane/update-state! this update-in [:a] inc))
+  (componentDidMount [this]
+    (cellophane/update-state! this update-in [:a] inc))
+  (render [this]
+    (dom/div nil
+      (clphn3-child)
+      (str "parent a: " (cellophane/get-state this :a)))))
+
+(deftest test-clphn-3
+  (let [c1 ((cellophane/factory CLPHN-3-Component-1))
+        c2 ((cellophane/factory CLPHN-3-Component-2))
+        c3 ((cellophane/factory CLPHN-3-Parent))]
+    (is (= (dom/render-to-str c1)
+           "<div><div data-reactid=\".0\">a: 2</div></div>"))
+    (is (= (dom/render-to-str c2)
+           "<div><div data-reactid=\".0\">a: 20</div></div>"))
+    (is (= (dom/render-to-str c3)
+           (remove-whitespace "<div>
+                                 <div data-reactid=\".0\">
+                                   <div data-reactid=\".0.0\">child a: 3</div>
+                                   <span data-reactid=\".0.1\">parent a: 4</span>
+                                 </div></div>")))))
