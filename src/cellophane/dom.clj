@@ -263,6 +263,7 @@
     (xml-attribute key (cond-> value
                          (or (keyword? value)
                              (number? value)) str))
+    (true? value) (str " " (name key))
     :else ""))
 
 (defn render-attr-map [attrs]

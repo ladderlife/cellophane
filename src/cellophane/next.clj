@@ -1390,7 +1390,7 @@
                                 *instrument* (:instrument config)]
                         ;; TODO: think of ways not to create so many instances
                         (let [c (rctor data)]
-                          (p/-render c)
+                          ;(p/-render c)
                           (swap! state assoc :root c)
                           (reset! ret c))))
             parsef  (fn []
