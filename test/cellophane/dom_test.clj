@@ -428,3 +428,20 @@
                                  <div data-reactid=\".0.0\">child a: 3</div>
                                  <span data-reactid=\".0.1\">parent a: 4</span>
                                </div>")))))
+
+(defui SomeChild
+  Object
+  (render [this]
+    (dom/div nil "foo")))
+
+(def some-child (cellophane/factory SomeChild))
+
+(defui SomeParent
+  Object
+  (render [this]
+    (some-child)))
+
+(deftest test-om-644
+  (is (= (#'dom/render-to-str* ((cellophane/factory SomeParent)))
+         "<div data-reactid=\".0\">foo</div>")))
+

@@ -320,8 +320,13 @@
 
 (declare span noscript)
 
-(defn nil-element []
+(defn- nil-element []
   (noscript nil))
+
+(defn- render-component [c]
+  (if (or (nil? c) (satisfies? p/IReactDOMElement c))
+    c
+    (recur (p/-render c))))
 
 (defn element
   "Creates a dom node."
@@ -337,7 +342,7 @@
                                    (satisfies? p/IReactDOMElement c) c
 
                                    (satisfies? p/IReactComponent c)
-                                   (let [rendered (if-let [element (p/-render c)]
+                                   (let [rendered (if-let [element (render-component c)]
                                                     element
                                                     (nil-element))]
                                      (assoc rendered :react-key
@@ -397,7 +402,7 @@
   {:pre [(or (satisfies? p/IReactComponent x)
              (satisfies? p/IReactDOMElement x))]}
   (let [element (if-let [element (cond-> x
-                                   (satisfies? p/IReactComponent x) p/-render)]
+                                   (satisfies? p/IReactComponent x) render-component)]
                   element
                   (nil-element))
         element (assign-react-ids element)]
