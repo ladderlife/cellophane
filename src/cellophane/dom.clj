@@ -1,7 +1,8 @@
 (ns cellophane.dom
   (:refer-clojure :exclude [map meta time use])
   (:require [clojure.string :as str]
-            [cellophane.protocols :as p]))
+            [cellophane.protocols :as p]
+            [cellophane.checksums :as chk]))
 
 ;; ===================================================================
 ;; DOM render
@@ -391,18 +392,21 @@
                                          i)]
                           (assign-react-ids c (conj id react-id)))) children))))))
 
-(defn render-to-str [x]
+(defn- render-to-str* [x]
   {:pre [(or (satisfies? p/IReactComponent x)
              (satisfies? p/IReactDOMElement x))]}
   (let [element (if-let [element (cond-> x
                                    (satisfies? p/IReactComponent x) p/-render)]
                   element
                   (nil-element))
-        element (assign-react-ids element)
-        ;; wrap in extra div so that React checksum is correct
-        ;; http://stackoverflow.com/a/33521172/3417023
-        element (cellophane.dom/div nil element)]
+        element (assign-react-ids element)]
     (p/-render-to-string element)))
+
+;; preserves testability without having to compute checksums
+(defn render-to-str [x]
+  (let [markup (render-to-str* x)
+        csum (chk/checksum markup)]
+    (chk/assign-react-checksum markup)))
 
 (defn node
   "Returns the dom node associated with a component's React ref."

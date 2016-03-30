@@ -77,19 +77,17 @@
 
 (deftest test-render-to-str
   (let [c ((cellophane/factory SimpleComponent))]
-    (is (= (dom/render-to-str c) "<div><div data-reactid=\".0\">Hello World</div></div>")))
+    (is (= (#'dom/render-to-str* c) "<div data-reactid=\".0\">Hello World</div>")))
   (let [hello (cellophane/factory Hello)]
-    (is (= (dom/render-to-str (hello {:text "Hello, world!"}))
-           "<div><p data-reactid=\".0\">Hello, world!</p></div>")))
+    (is (= (#'dom/render-to-str* (hello {:text "Hello, world!"}))
+           "<p data-reactid=\".0\">Hello, world!</p>")))
   (let [children (cellophane/factory Children)]
-    (is (= (dom/render-to-str (children))
-          (remove-whitespace "<div>
-                                <div data-reactid=\".0\">
+    (is (= (#'dom/render-to-str* (children))
+          (remove-whitespace "<div data-reactid=\".0\">
                                   <div data-reactid=\".0.0\">Foo</div>
                                   <div data-reactid=\".0.1\">Bar</div>
                                   <div data-reactid=\".0.2\">Bar</div>
                                   <div data-reactid=\".0.3\">Woz</div>
-                                </div>
                               </div>")))))
 
 (deftest test-format-react-attrs
@@ -126,10 +124,10 @@
     "<input placeholder=\"some text\" id=\"stuff\" type=\"text\" data-reactid=\".0\">"))
 
 (deftest test-only-supported-attrs-rendered
-  (are [element markup] (= (dom/render-to-str element) (remove-whitespace markup))
-    (dom/div #js {:not-supported "foo"}) "<div><div data-reactid=\".0\"></div></div>"
-    (dom/div {:className "stuff" :class "other"}) "<div><div class=\"stuff\" data-reactid=\".0\"></div></div>"
-    (dom/div {:media :stuff}) "<div><div data-reactid=\".0\"></div></div>"))
+  (are [element markup] (= (#'dom/render-to-str* element) (remove-whitespace markup))
+    (dom/div #js {:not-supported "foo"}) "<div data-reactid=\".0\"></div>"
+    (dom/div {:className "stuff" :class "other"}) "<div class=\"stuff\" data-reactid=\".0\"></div>"
+    (dom/div {:media :stuff}) "<div data-reactid=\".0\"></div>"))
 
 (def styles
   #js {:textAlign "center"
@@ -154,8 +152,8 @@
 
 (deftest test-render-component-with-style
   (let [ctor (cellophane/factory ComponentWithStyle)]
-    (is (= (dom/render-to-str (ctor))
-          "<div><div style=\"text-align:center;margin-left:10px;\" data-reactid=\".0\"></div></div>"))))
+    (is (= (#'dom/render-to-str* (ctor))
+          "<div style=\"text-align:center;margin-left:10px;\" data-reactid=\".0\"></div>"))))
 
 ;; Simple nested `defui`s
 
@@ -174,11 +172,9 @@
 
 (deftest test-simple-nested-defuis
   (let [ctor (cellophane/factory SimpleNestedParent)]
-    (is (= (dom/render-to-str (ctor))
-           (remove-whitespace "<div>
-                                 <div data-reactid=\".0\">
+    (is (= (#'dom/render-to-str* (ctor))
+           (remove-whitespace "<div data-reactid=\".0\">
                                    <div data-reactid=\".0.0\">child</div>
-                                 </div>
                                </div>")))))
 
 
@@ -241,10 +237,9 @@
 
 (deftest test-render-simple-recursive-example
   (let [c (cellophane/add-root! simple-tree-reconciler SimpleTree nil)]
-    (is (= (dom/render-to-str c)
+    (is (= (#'dom/render-to-str* c)
           (remove-whitespace
-            "<div>
-               <ul data-reactid=\".0\">
+            "<ul data-reactid=\".0\">
                  <li data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree]\">
                    <div data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].0\">Node value:1</div>
                    <ul data-reactid=\".0.$cellophane$dom_test$SimpleNode_[=2tree].1\">
@@ -263,8 +258,7 @@
                      </li>
                    </ul>
                  </li>
-               </ul>
-             </div>")))))
+             </ul>")))))
 
 (defn MultipleTextChildren []
   (dom/div nil
@@ -329,31 +323,29 @@
 
 (deftest test-shared
   (let [c (cellophane/add-root! reconciler Home nil)]
-    (is (= (dom/render-to-str c)
-           (remove-whitespace "<div>
-                                 <div data-reactid=\".0\">
+    (is (= (#'dom/render-to-str* c)
+           (remove-whitespace "<div data-reactid=\".0\">
                                    <h3 data-reactid=\".0.0\">Props: {:counter 0}</h3>
                                    <h3 data-reactid=\".0.1\">Shared: {:counter 0}</h3>
                                    <button data-reactid=\".0.2\">Increment!</button>
-                                 </div>
                                </div>")))))
 
 (deftest test-render-to-str-elements
-  (are [elem res] (= (dom/render-to-str elem) res)
-    (dom/div nil "foo") "<div><div data-reactid=\".0\">foo</div></div>"))
+  (are [elem res] (= (#'dom/render-to-str* elem) res)
+    (dom/div nil "foo") "<div data-reactid=\".0\">foo</div>"))
 
 (deftest react-key-in-elements
   (is (= (:react-key (dom/div {:key "foo"})) "foo"))
   (is (= (:attrs (dom/div {:key "foo"})) {}))
   (is (= (:react-key (dom/div nil)) nil))
-  (is (= (dom/render-to-str (dom/div {:key "foo"}))
-        "<div><div data-reactid=\".0\"></div></div>"))
-  (is (= (dom/render-to-str (dom/div nil (dom/div #js {:key "foo"})))
-        "<div><div data-reactid=\".0\"><div data-reactid=\".0.$foo\"></div></div></div>")))
+  (is (= (#'dom/render-to-str* (dom/div {:key "foo"}))
+        "<div data-reactid=\".0\"></div>"))
+  (is (= (#'dom/render-to-str* (dom/div nil (dom/div #js {:key "foo"})))
+        "<div data-reactid=\".0\"><div data-reactid=\".0.$foo\"></div></div>")))
 
 (deftest test-non-string-attributes
-  (is (= (dom/render-to-str (dom/div {:className 3}))
-        "<div><div class=\"3\" data-reactid=\".0\"></div></div>")))
+  (is (= (#'dom/render-to-str* (dom/div {:className 3}))
+        "<div class=\"3\" data-reactid=\".0\"></div>")))
 
 (defui NilChild
   Object
@@ -370,13 +362,11 @@
       (nil-child-factory))))
 
 (deftest test-nil-children
-  (is (= (dom/render-to-str (nil-child-factory))
-         "<div><noscript data-reactid=\".0\"></noscript></div>"))
-  (is (= (dom/render-to-str ((cellophane/factory NilParent)))
-        (remove-whitespace "<div>
-                              <div data-reactid=\".0\"><span data-reactid=\".0.0\">foo</span>
+  (is (= (#'dom/render-to-str* (nil-child-factory))
+         "<noscript data-reactid=\".0\"></noscript>"))
+  (is (= (#'dom/render-to-str* ((cellophane/factory NilParent)))
+        (remove-whitespace "<div data-reactid=\".0\"><span data-reactid=\".0.0\">foo</span>
                                 <noscript data-reactid=\".0.1\"></noscript>
-                              </div>
                             </div>"))))
 
 (defui CLPHN-3-Component-1
@@ -429,13 +419,12 @@
   (let [c1 ((cellophane/factory CLPHN-3-Component-1))
         c2 ((cellophane/factory CLPHN-3-Component-2))
         c3 ((cellophane/factory CLPHN-3-Parent))]
-    (is (= (dom/render-to-str c1)
-           "<div><div data-reactid=\".0\">a: 2</div></div>"))
-    (is (= (dom/render-to-str c2)
-           "<div><div data-reactid=\".0\">a: 20</div></div>"))
-    (is (= (dom/render-to-str c3)
-           (remove-whitespace "<div>
-                                 <div data-reactid=\".0\">
-                                   <div data-reactid=\".0.0\">child a: 3</div>
-                                   <span data-reactid=\".0.1\">parent a: 4</span>
-                                 </div></div>")))))
+    (is (= (#'dom/render-to-str* c1)
+           "<div data-reactid=\".0\">a: 2</div>"))
+    (is (= (#'dom/render-to-str* c2)
+           "<div data-reactid=\".0\">a: 20</div>"))
+    (is (= (#'dom/render-to-str* c3)
+           (remove-whitespace "<div data-reactid=\".0\">
+                                 <div data-reactid=\".0.0\">child a: 3</div>
+                                 <span data-reactid=\".0.1\">parent a: 4</span>
+                               </div>")))))

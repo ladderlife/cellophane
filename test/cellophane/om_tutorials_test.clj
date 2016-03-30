@@ -53,29 +53,27 @@
 
 (deftest test-render-animals-tutorial
   (let [result-markup (remove-whitespace
-                        "<div>
-                           <div data-reactid=\".0\">
-                             <h2 data-reactid=\".0.0\">Animals</h2>
-                             <ul data-reactid=\".0.1\">
-                               <li data-reactid=\".0.1.0\">1. Ant</li>
-                               <li data-reactid=\".0.1.1\">2. Antelope</li>
-                               <li data-reactid=\".0.1.2\">3. Bird</li>
-                               <li data-reactid=\".0.1.3\">4. Cat</li>
-                               <li data-reactid=\".0.1.4\">5. Dog</li>
-                               <li data-reactid=\".0.1.5\">6. Lion</li>
-                               <li data-reactid=\".0.1.6\">7. Mouse</li>
-                               <li data-reactid=\".0.1.7\">8. Monkey</li>
-                               <li data-reactid=\".0.1.8\">9. Snake</li>
-                               <li data-reactid=\".0.1.9\">10. Zebra</li>
-                             </ul>
-                           </div>
+                        "<div data-reactid=\".0\">
+                           <h2 data-reactid=\".0.0\">Animals</h2>
+                           <ul data-reactid=\".0.1\">
+                             <li data-reactid=\".0.1.0\">1. Ant</li>
+                             <li data-reactid=\".0.1.1\">2. Antelope</li>
+                             <li data-reactid=\".0.1.2\">3. Bird</li>
+                             <li data-reactid=\".0.1.3\">4. Cat</li>
+                             <li data-reactid=\".0.1.4\">5. Dog</li>
+                             <li data-reactid=\".0.1.5\">6. Lion</li>
+                             <li data-reactid=\".0.1.6\">7. Mouse</li>
+                             <li data-reactid=\".0.1.7\">8. Monkey</li>
+                             <li data-reactid=\".0.1.8\">9. Snake</li>
+                             <li data-reactid=\".0.1.9\">10. Zebra</li>
+                           </ul>
                          </div>")]
     (testing "render with factory"
       (let [ctor (cellophane/factory AnimalsList)]
-        (is (= (dom/render-to-str (ctor @animals-app-state)) result-markup))))
+        (is (= (#'dom/render-to-str* (ctor @animals-app-state)) result-markup))))
     (testing "render with reconciler & add-root!"
       (let [c (cellophane/add-root! animals-reconciler AnimalsList nil)
-            markup-str (dom/render-to-str c)]
+            markup-str (#'dom/render-to-str* c)]
         (is (= (class (cellophane/app-root animals-reconciler)) AnimalsList))
         (is (= markup-str result-markup))))))
 
@@ -129,26 +127,24 @@
 
 (deftest test-render-links-tutorial
   (let [c (cellophane/add-root! links-reconciler LinksSomeList nil)]
-    (is (= (dom/render-to-str c)
+    (is (= (#'dom/render-to-str* c)
            (remove-whitespace
-             "<div>
-                <div data-reactid=\".0\">
-                  <h2 data-reactid=\".0.0\">A List!</h2>
-                  <ul data-reactid=\".0.1\">
-                    <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0]\">
-                      <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0].0\">Foo</div>
-                      <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0].1\">bob.smith@gmail.com</div>
-                    </li>
-                    <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1]\">
-                      <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1].0\">Bar</div>
-                      <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1].1\">bob.smith@gmail.com</div>
-                    </li>
-                    <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2]\">
-                      <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2].0\">Baz</div>
-                      <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2].1\">bob.smith@gmail.com</div>
-                    </li>
-                  </ul>
-                </div>
+             "<div data-reactid=\".0\">
+                <h2 data-reactid=\".0.0\">A List!</h2>
+                <ul data-reactid=\".0.1\">
+                  <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0]\">
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0].0\">Foo</div>
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 0].1\">bob.smith@gmail.com</div>
+                  </li>
+                  <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1]\">
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1].0\">Bar</div>
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 1].1\">bob.smith@gmail.com</div>
+                  </li>
+                  <li data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2]\">
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2].0\">Baz</div>
+                    <div data-reactid=\".0.1.$cellophane$om_tutorials_test$LinksItem_[=2items 2].1\">bob.smith@gmail.com</div>
+                  </li>
+                </ul>
               </div>")))))
 
 ;; =============================================================================
@@ -260,46 +256,44 @@
 
 (deftest test-cian-tutorial
   (let [c (cellophane/add-root! cian-reconciler RootView nil)]
-    (is (= (dom/render-to-str c)
-           (remove-whitespace "<div>
-                                 <div data-reactid=\".0\">
-                                   <h2 data-reactid=\".0.0\">List A</h2>
-                                   <ul data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one]\">
-                                     <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John\">
-                                       <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John.0\">John, points: 0</label>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John.1\">+</button>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John.2\">-</button>
-                                     </li>
-                                     <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary\">
-                                       <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary.0\">Mary, points: 0</label>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary.1\">+</button>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary.2\">-</button>
-                                     </li>
-                                     <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob\">
-                                       <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob.0\">Bob, points: 0</label>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob.1\">+</button>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob.2\">-</button>
-                                     </li>
-                                   </ul>
-                                   <h2 data-reactid=\".0.2\">List B</h2>
-                                   <ul data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two]\">
-                                     <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary\">
-                                       <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary.0\">Mary, points: 0</label>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary.1\">+</button>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary.2\">-</button>
-                                     </li>
-                                     <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen\">
-                                       <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen.0\">Gwen, points: 0</label>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen.1\">+</button>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen.2\">-</button>
-                                     </li>
-                                     <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff\">
-                                       <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff.0\">Jeff, points: 0</label>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff.1\">+</button>
-                                       <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff.2\">-</button>
-                                     </li>
-                                   </ul>
-                                 </div>
+    (is (= (#'dom/render-to-str* c)
+           (remove-whitespace "<div data-reactid=\".0\">
+                                 <h2 data-reactid=\".0.0\">List A</h2>
+                                 <ul data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one]\">
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John.0\">John, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$John.2\">-</button>
+                                   </li>
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary.0\">Mary, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Mary.2\">-</button>
+                                   </li>
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob.0\">Bob, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/one].$Bob.2\">-</button>
+                                   </li>
+                                 </ul>
+                                 <h2 data-reactid=\".0.2\">List B</h2>
+                                 <ul data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two]\">
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary.0\">Mary, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Mary.2\">-</button>
+                                   </li>
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen.0\">Gwen, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Gwen.2\">-</button>
+                                   </li>
+                                   <li data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff\">
+                                     <label data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff.0\">Jeff, points: 0</label>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff.1\">+</button>
+                                     <button data-reactid=\".0.$cellophane$om_tutorials_test$ListView_[=2list/two].$Jeff.2\">-</button>
+                                   </li>
+                                 </ul>
                                </div>")))))
 
 ;; =============================================================================
@@ -440,73 +434,72 @@
 
 (deftest test-unions-tutorial
     (let [c (cellophane/add-root! union-reconciler Dashboard nil)]
-      (is (= (dom/render-to-str c)
+      (is (= (#'dom/render-to-str* c)
             (remove-whitespace
-              "<div>
-                <ul style=\"padding:0;\" data-reactid=\".0\">
-                  <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0]\">
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0\">
-                      <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0]\">
-                        <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0].0\">A Post!</h3>
-                        <h4 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0].1\">Laura Smith</h4>
-                        <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0].2\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
-                      </div>
+              "<ul style=\"padding:0;\" data-reactid=\".0\">
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0].0\">A Post!</h3>
+                      <h4 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0].1\">Laura Smith</h4>
+                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 0].2\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
                     </div>
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].1\">
-                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].1.0\">Favorites: 0</p>
-                      <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].1.1\">Favorite!</button>
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 0].1.1\">Favorite!</button>
+                  </div>
+                </li>
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1].0\">Photo: A Photo!</h3>
+                      <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1].1\">photo.jpg</div>
+                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1].2\">Caption: </p>
                     </div>
-                  </li>
-                  <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1]\">
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0\">
-                      <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1]\">
-                        <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1].0\">Photo: A Photo!</h3>
-                        <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1].1\">photo.jpg</div>
-                        <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].0.$cellophane$om_tutorials_test$Photo_[=2dashboard/items 1].2\">Caption: </p>
-                      </div>
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].1.1\">Favorite!</button>
+                  </div>
+                </li>
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2].0\">Another Post!</h3>
+                      <h4 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2].1\">Jim Jacobs</h4>
+                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2].2\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
                     </div>
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].1\">
-                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].1.0\">Favorites: 0</p>
-                      <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 1].1.1\">Favorite!</button>
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].1.1\">Favorite!</button>
+                  </div>
+                </li>
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0.$cellophane$om_tutorials_test$Graphic_[=2dashboard/items 3]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0.$cellophane$om_tutorials_test$Graphic_[=2dashboard/items 3].0\">Graphic: Charts and Stufff!</h3>
+                      <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0.$cellophane$om_tutorials_test$Graphic_[=2dashboard/items 3].1\">chart.jpg</div>
                     </div>
-                  </li>
-                  <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2]\">
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0\">
-                      <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2]\">
-                        <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2].0\">Another Post!</h3>
-                        <h4 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2].1\">Jim Jacobs</h4>
-                        <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 2].2\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
-                      </div>
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].1.1\">Favorite!</button>
+                  </div>
+                </li>
+                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4]\">
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0\">
+                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4]\">
+                      <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4].0\">Yet Another Post!</h3>
+                      <h4 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4].1\">May Fields</h4>
+                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4].2\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
                     </div>
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].1\">
-                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].1.0\">Favorites: 0</p>
-                      <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 2].1.1\">Favorite!</button>
-                    </div>
-                  </li>
-                  <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3]\">
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0\">
-                      <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0.$cellophane$om_tutorials_test$Graphic_[=2dashboard/items 3]\">
-                        <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0.$cellophane$om_tutorials_test$Graphic_[=2dashboard/items 3].0\">Graphic: Charts and Stufff!</h3>
-                        <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].0.$cellophane$om_tutorials_test$Graphic_[=2dashboard/items 3].1\">chart.jpg</div>
-                      </div>
-                    </div>
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].1\">
-                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].1.0\">Favorites: 0</p>
-                      <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 3].1.1\">Favorite!</button>
-                    </div>
-                  </li>
-                  <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4]\">
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0\">
-                      <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4]\">
-                        <h3 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4].0\">Yet Another Post!</h3>
-                        <h4 data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4].1\">May Fields</h4>
-                        <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].0.$cellophane$om_tutorials_test$Post_[=2dashboard/items 4].2\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
-                      </div>
-                    </div>
-                    <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].1\">
-                      <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].1.0\">Favorites: 0</p>
-                      <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].1.1\">Favorite!</button>
-                    </div>
-                  </li>
-                </ul>
-              </div>")))))
+                  </div>
+                  <div data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].1\">
+                    <p data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].1.0\">Favorites: 0</p>
+                    <button data-reactid=\".0.$cellophane$om_tutorials_test$DashboardItem_[=2dashboard/items 4].1.1\">Favorite!</button>
+                  </div>
+                </li>
+              </ul>")))))
+
