@@ -445,3 +445,12 @@
   (is (= (#'dom/render-to-str* ((cellophane/factory SomeParent)))
          "<div data-reactid=\".0\">foo</div>")))
 
+(defui NilChildrenComp
+  Object
+  (render [this]
+    (dom/div #js {}
+      nil)))
+
+(deftest test-nil-children
+  (is (= (#'dom/render-to-str* ((cellophane/factory NilChildrenComp)))
+         "<div data-reactid=\".0\"></div>")))

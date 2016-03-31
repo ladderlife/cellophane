@@ -175,6 +175,7 @@
              [:foo :bar]))
       (p/-render c)
       (is (#'cellophane/mounted? c))
+      (is (cellophane/react-ref c :child-1))
       (is (#'cellophane/mounted? (cellophane/react-ref c :child-1)))
       (is (= (cellophane/subquery c :child-1 SubqueryChild)
              [:foo :bar])))))

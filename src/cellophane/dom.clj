@@ -2,6 +2,7 @@
   (:refer-clojure :exclude [map meta time use])
   (:require [clojure.string :as str]
             [cellophane.protocols :as p]
+            [clojure.core.reducers :as r]
             [cellophane.checksums :as chk]))
 
 ;; ===================================================================
@@ -201,6 +202,76 @@
   #{"xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole"
     "xlinkShow" "xlinkTitle" "xlinkType" "xmlBase" "xmlLang" "xmlSpace"})
 
+(declare span noscript render-element)
+
+(defrecord Element [tag attrs react-id react-key children]
+  p/IReactDOMElement
+  (-render-to-string [this]
+    (render-element this))
+
+  p/IReactChildren
+  (-children [this] children))
+
+(defrecord Text [s]
+  p/IReactDOMElement
+  (-render-to-string [this]
+    (assert (string? s))
+    s))
+
+(defn text-node
+  "HTML text node"
+  [s]
+  (map->Text {:s s}))
+
+(defn- nil-element []
+  (noscript nil))
+
+(defn- render-component [c]
+  (if (or (nil? c) (satisfies? p/IReactDOMElement c))
+    c
+    (recur (p/-render c))))
+
+(defn element
+  "Creates a dom node."
+  [{:keys [tag attrs react-key children] :as elem}]
+                                        ;{:post [(valid-element? %)]}
+  (assert (name tag))
+  (assert (or (nil? attrs) (map? attrs)) (format "elem %s attrs invalid" elem))
+  (let [children (flatten children)
+        child-node-count (count children)
+        nproc (.. Runtime getRuntime availableProcessors)
+        reduce-fn (if (> child-node-count (/ nproc 2))
+                 r/reduce
+                 reduce)
+        children (reduce-fn
+                   (fn [res c]
+                     (let [c' (cond
+                                (satisfies? p/IReactDOMElement c) c
+
+                                (satisfies? p/IReactComponent c)
+                                (let [rendered (if-let [element (render-component c)]
+                                                 element
+                                                 (nil-element))]
+                                  (assoc rendered :react-key
+                                    (some-> (:props c) :cellophaneclj$reactKey)))
+
+                                (or (string? c) (number? c))
+                                (let [c (cond-> c (number? c) str)]
+                                  (if (> child-node-count 1)
+                                    (span nil c)
+                                    (text-node c)))
+                                (nil? c) nil
+                                :else (do
+                                        (println "invalid child element:" c (class c))
+                                        (assert false)))]
+                       (cond-> res
+                         (some? c') (conj c'))))
+                   [] children)]
+    (map->Element {:tag (name tag)
+                   :attrs attrs
+                   :react-key react-key
+                   :children children})))
+
 (defn camel->other-case [sep]
   (fn [s]
     (->> (str/split s #"(?=[A-Z])")
@@ -287,81 +358,28 @@
   (assert (vector? react-id))
   (str "." (str/join "." react-id)))
 
-(defn render-element
-  "Render a tag vector as a HTML element string."
-  [{:keys [tag attrs react-id children]}]
+(defn collect-strs
+  [{:keys [tag attrs react-id children] :as elem}]
   (let [attrs (cond-> attrs
                 (some? react-id)
-                (assoc :data-reactid (react-id-str react-id)))]
-    (if (container-tag? tag (seq children))
-      (str "<" tag (render-attr-map attrs) ">"
-        (apply str (clojure.core/map p/-render-to-string children))
-        "</" tag ">")
-      (str "<" tag (render-attr-map attrs) ">"))))
+                (assoc :data-reactid (react-id-str react-id)))
+        container-tag? (container-tag? tag (seq children))]
+    (loop [children (seq children)
+           worklist ["<" tag (render-attr-map attrs) ">"]]
+      (if children
+        (let [child (first children)]
+          (recur (next children)
+            (into worklist
+              (if (instance? Text child)
+                [(:s child)]
+                (collect-strs child)))))
+        (cond-> worklist
+          container-tag? (into ["</" tag ">"]))))))
 
-(defrecord Element [tag attrs react-id react-key children]
-  p/IReactDOMElement
-  (-render-to-string [this]
-    (render-element this))
-
-  p/IReactChildren
-  (-children [this] children))
-
-(defrecord Text [s]
-  p/IReactDOMElement
-  (-render-to-string [this]
-    (assert (string? s))
-    s))
-
-(defn text-node
-  "HTML text node"
-  [s]
-  (map->Text {:s s}))
-
-(declare span noscript)
-
-(defn- nil-element []
-  (noscript nil))
-
-(defn- render-component [c]
-  (if (or (nil? c) (satisfies? p/IReactDOMElement c))
-    c
-    (recur (p/-render c))))
-
-(defn element
-  "Creates a dom node."
-  [{:keys [tag attrs react-key children] :as elem}]
-                                        ;{:post [(valid-element? %)]}
-  (assert (name tag))
-  (assert (or (nil? attrs) (map? attrs)) (format "elem %s attrs invalid" elem))
-  (let [children (flatten children)
-        child-node-count (count children)
-        children (doall (->> (clojure.core/map
-                               (fn [c]
-                                 (cond
-                                   (satisfies? p/IReactDOMElement c) c
-
-                                   (satisfies? p/IReactComponent c)
-                                   (let [rendered (if-let [element (render-component c)]
-                                                    element
-                                                    (nil-element))]
-                                     (assoc rendered :react-key
-                                       (some-> (:props c) :cellophaneclj$reactKey)))
-
-                                   (or (string? c) (number? c))
-                                   (let [c (cond-> c (number? c) str)]
-                                     (if (> child-node-count 1)
-                                       (span nil c)
-                                       (text-node c)))
-                                   (nil? c) nil
-                                   :else (do
-                                           (println "invalid child element:" c (class c))
-                                           (assert false)))) children)
-                          (filter identity)))]
-    (map->Element {:tag (name tag)
-                   :attrs attrs
-                   :react-key react-key
-                   :children children})))
+(defn render-element
+  "Render a tag vector as a HTML element string."
+  [element]
+  (apply str (collect-strs element)))
 
 (defn gen-tag-fn [tag]
   `(defn ~tag [~'attrs & ~'children]
