@@ -5,6 +5,7 @@
             [clojure.string :as str]
             [clojure.walk :as walk]
             [clojure.zip :as zip]
+            [om.next.protocols :as om-p]
             [om.next.impl.parser :as parser]
             [om.tempid :as tempid]
             [om.transit :as transit]))
@@ -705,10 +706,10 @@
      (swap! st update-in [:cellophane.next/queries (or c root)] merge
        (merge (when query {:query query}) (when params {:params params})))
      (when (and (not (nil? c)) (nil? reads))
-       (p/queue! r [c]))
+       (om-p/queue! r [c]))
      (when-not (nil? reads)
-       (p/queue! r reads))
-     (p/reindex! r)
+       (om-p/queue! r reads))
+     (om-p/reindex! r)
      (let [rootq (if (not (nil? c))
                    (full-query c)
                    (when (nil? reads)
@@ -716,7 +717,7 @@
            sends (gather-sends (to-env cfg)
                    (into (or rootq []) (transform-reads r reads)) (:remotes cfg))]
        (when-not (empty? sends)
-         (p/queue-sends! r sends)
+         (om-p/queue-sends! r sends)
          (schedule-sends! r)))
      nil)))
 
@@ -753,19 +754,19 @@
 (declare remove-root!)
 
 (defn schedule-sends! [reconciler]
-  (when (p/schedule-sends! reconciler)
-    (p/send! reconciler)))
+  (when (om-p/schedule-sends! reconciler)
+    (om-p/send! reconciler)))
 
 (defn add-root!
   ([reconciler root-class target]
    (add-root! reconciler root-class target nil))
   ([reconciler root-class target options]
    {:pre [(reconciler? reconciler) (class? root-class)]}
-   (p/add-root! reconciler root-class target options)))
+   (om-p/add-root! reconciler root-class target options)))
 
 (defn remove-root!
   [reconciler target]
-  (p/remove-root! reconciler target))
+  (om-p/remove-root! reconciler target))
 
 ;; =============================================================================
 ;; Transactions
@@ -800,9 +801,9 @@
         q    (cond-> []
                (not (nil? c)) (conj c)
                (not (nil? ref)) (conj ref))]
-    (p/queue! r (into q (remove symbol?) (keys v)))
+    (om-p/queue! r (into q (remove symbol?) (keys v)))
     (when-not (empty? snds)
-      (p/queue-sends! r snds)
+      (om-p/queue-sends! r snds)
       (schedule-sends! r))))
 
 (defn annotate-mutations
@@ -879,7 +880,7 @@
   clojure.lang.IDeref
   (deref [_] @indexes)
 
-  p/IIndexer
+  om-p/IIndexer
   (index-root [_ x]
     (let [prop->classes     (atom {})
           class-path->query (atom {})
@@ -1001,13 +1002,13 @@
   [x ref]
   (when-not (nil? ref)
     (let [indexer (if (reconciler? x) (get-indexer x) x)]
-      (p/key->components indexer ref))))
+      (om-p/key->components indexer ref))))
 
 (defn ref->any
   "Get any component from the indexer that matches the ref."
   [x ref]
   (let [indexer (if (reconciler? x) (get-indexer x) x)]
-    (first (p/key->components indexer ref))))
+    (first (om-p/key->components indexer ref))))
 
 (defn class->any
   "Get any component from the indexer that matches the component class."
@@ -1318,7 +1319,7 @@
          state (:state config)
          merge* (:merge config)
          {:keys [keys next tempids]} (merge* reconciler @state delta query)]
-     (p/queue! reconciler keys)
+     (om-p/queue! reconciler keys)
      (reset! state
        (if-let [migrate (:migrate config)]
          (merge (select-keys next [:cellophane.next/queries])
@@ -1364,7 +1365,7 @@
   clojure.lang.IDeref
   (deref [this] @(:state config))
 
-  p/IReconciler
+  om-p/IReconciler
   (basis-t [_] (:t @state))
 
   (add-root! [this root-class target options]
@@ -1374,7 +1375,7 @@
           guid  (Math/random)
           ]
       (when (iquery? root-class)
-        (p/index-root (:indexer config) root-class))
+        (om-p/index-root (:indexer config) root-class))
       (when (and (:normalize config)
                  (not (:normalized @state)))
         (let [new-state (tree->db root-class @(:state config))
@@ -1390,7 +1391,7 @@
                                 *instrument* (:instrument config)]
                         ;; TODO: think of ways not to create so many instances
                         (let [c (rctor data)]
-                          ;(p/-render c)
+                          ;(om-p/-render c)
                           (swap! state assoc :root c)
                           (reset! ret c))))
             parsef  (fn []
@@ -1442,7 +1443,7 @@
       (when (iquery? root)
         (let [indexer (:indexer config)
               c (first (get-in @indexer [:class->components root]))]
-          (p/index-root indexer (or c root))))))
+          (om-p/index-root indexer (or c root))))))
 
   (queue! [_ ks]
     (swap! state update-in [:queue] into ks))
@@ -1475,7 +1476,7 @@
 
         :else
         (let [cs (transduce
-                   (map #(p/key->components (:indexer config) %))
+                   (map #(om-p/key->components (:indexer config) %))
                    #(into %1 %2) #{} q)
               {:keys [ui->props]} config
               env (to-env config)]

@@ -2,7 +2,8 @@
   (:require [clojure.test :refer [deftest testing is are]]
             [cellophane.next :as cellophane :refer [defui]]
             [cellophane.dom :as dom]
-            [cellophane.protocols :as p])
+            [cellophane.protocols :as p]
+            [om.next.protocols :as om-p])
   (:import [cellophane.next Indexer]))
 
 (defui SimpleComponent
@@ -360,34 +361,34 @@
 (deftest test-indexer
   (testing "prop->classes"
     (let [idxr (cellophane/indexer)
-          idxs (p/index-root idxr ComponentList)]
+          idxs (om-p/index-root idxr ComponentList)]
       (is (= (set (keys (:prop->classes idxs)))
             #{:app/title :components/list :foo/bar :baz/woz})))
     (let [idxr (cellophane/indexer)
-          idxs (p/index-root idxr IdxrParamsComponent)]
+          idxs (om-p/index-root idxr IdxrParamsComponent)]
       (is (= (set (keys (:prop->classes idxs)))
             #{:some/key}))))
   (testing "simple recursion indexing"
     (let [idxr (cellophane/indexer)
-          idxs (p/index-root idxr IdxrTree)
+          idxs (om-p/index-root idxr IdxrTree)
           cps (keys (:class-path->query idxs))]
       (is (= (count cps) 2))
       (is (not (nil? (some #{[IdxrTree IdxrNode]} cps))))))
   (testing "OM-595: recursion queries without own component"
     (let [idxr (cellophane/indexer)
-          idxs (p/index-root idxr OM-595-Component)
+          idxs (om-p/index-root idxr OM-595-Component)
           cps (keys (:class-path->query idxs))]
       (is (= (count cps) 1))
       (is (= (first cps) [OM-595-Component]))))
   (testing "OM-612: regression introduced by OM-595"
     (let [idxr (cellophane/indexer)
-          idxs (p/index-root idxr IdxrRoot)
+          idxs (om-p/index-root idxr IdxrRoot)
           cps (keys (:class-path->query idxs))]
       (is (not (nil? (some #{[IdxrRoot IdxrChild]} cps))))))
   (testing "OM-620: link & indent indexing"
     (let [idxr (cellophane/indexer)]
       (are [class res] (= (->> class
-                            (p/index-root idxr)
+                            (om-p/index-root idxr)
                             :prop->classes keys set)
                          res)
         IdxrLinkProp #{:foo :current-user}
@@ -396,7 +397,7 @@
         IdxrIdentJoin #{:foo [:users/by-id 2] :id :name :email})))
   (testing "OM-639: index-root fails on links"
     (let [idxr (cellophane/indexer)
-          idxs (p/index-root idxr IdxrLinkRoot)]
+          idxs (om-p/index-root idxr IdxrLinkRoot)]
       (is (contains? idxs :prop->classes)))))
 
 (deftest test-reindex-instances
@@ -405,8 +406,8 @@
              :parser (cellophane/parser {:read (fn [_ _ _] {})})})
         idxr (get-in r [:config :indexer])
         ;; simulate mounting
-        _ (p/add-root! r RootComponent nil nil)
-        _ (p/index-component! idxr (->RootComponent nil nil #js {:cellophaneclj$reconciler r} nil))
+        _ (om-p/add-root! r RootComponent nil nil)
+        _ (om-p/index-component! idxr (->RootComponent nil nil #js {:cellophaneclj$reconciler r} nil))
         indexes @(:indexes idxr)
         classes (-> indexes :class->components keys)
         cps (-> indexes :class-path->query keys)
