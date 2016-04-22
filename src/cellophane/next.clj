@@ -8,7 +8,8 @@
             [om.next.protocols :as om-p]
             [om.next.impl.parser :as parser]
             [om.tempid :as tempid]
-            [om.transit :as transit]))
+            [om.transit :as transit]
+            [om.util :as util]))
 
 ;; =============================================================================
 ;; Globals & Dynamics
@@ -22,17 +23,6 @@
 ;; =============================================================================
 ;; Utilities
 
-(defn ident?
-  "Returns true if x is an ident."
-  [x]
-  (and (vector? x)
-    (== 2 (count x))
-    (keyword? (nth x 0))))
-
-(defn recursion? [x]
-  (or (= '... x)
-      (number? x)))
-
 (defn- expr->key
   "Given a query expression return its key."
   [expr]
@@ -42,7 +32,7 @@
     (seq? expr)     (let [expr' (first expr)]
                       (when (map? expr')
                         (ffirst expr')))
-    (ident? expr)   (cond-> expr (= '_ (second expr)) first)
+    (util/ident? expr)   (cond-> expr (= '_ (second expr)) first)
     :else
     (throw
       (ex-info (str "Invalid query expr " expr)
@@ -71,15 +61,6 @@
       (if (= k (first node))
         (-> loc zip/down zip/right)
         (recur (zip/right loc))))))
-
-(defn union? [expr]
-  (let [expr (cond-> expr (seq? expr) first)]
-    (and (map? expr)
-         (map? (-> expr first second)))))
-
-(defn mutation? [expr]
-  (let [expr (cond-> expr (seq? expr) first)]
-    (symbol? expr)))
 
 (defn- query-template
   "Given a query and a path into a query return a zipper focused at the location
@@ -116,21 +97,6 @@
 
 (declare focus-query)
 
-(defn- join-key [expr]
-  (cond
-    (map? expr) (ffirst expr)
-    (seq? expr) (join-key (first expr))
-    :else       expr))
-
-(defn- join-entry [expr]
-  (if (seq? expr)
-    (ffirst expr)
-    (first expr)))
-
-(defn- join? [x]
-  (let [x (if (seq? x) (first x) x)]
-    (map? x)))
-
 (defn- focused-join [expr ks]
   (let [expr-meta (meta expr)
         expr' (cond
@@ -152,7 +118,7 @@
     query
     (let [[k & ks] path]
       (letfn [(match [x]
-                (= k (join-key x)))
+                (= k (util/join-key x)))
               (value [x]
                 (focused-join x ks))]
         (if (map? query) ;; UNION
@@ -174,11 +140,11 @@
    (if (and (or (= bound '*)
                 (and (not= path bound)
                      (< (count path) (count bound))))
-            (some join? focus)
+            (some util/join? focus)
             (== 1 (count focus)))
-     (let [[k focus'] (join-entry (first focus))
-           k (if (ident? k) (first k) k)
-           focus'     (if (recursion? focus')
+     (let [[k focus'] (util/join-entry (first focus))
+           k (if (util/ident? k) (first k) k)
+           focus'     (if (util/recursion? focus')
                         focus
                         focus')]
        (recur focus' bound (conj path k)))
@@ -812,7 +778,7 @@
   [tx ident]
   (letfn [(annotate [expr ident]
             (cond-> expr
-              (mutation? expr) (vary-meta assoc :mutator ident)))]
+              (util/mutation? expr) (vary-meta assoc :mutator ident)))]
     (into [] (map #(annotate % ident)) tx)))
 
 (defn transact!
@@ -888,7 +854,7 @@
           class             (cond-> x (component? x) type)]
       (letfn [(get-dispatch-key [prop]
                 (cond-> prop
-                  (or (not (ident? prop))
+                  (or (not (util/ident? prop))
                       (= (second prop) '_))
                   ((comp :dispatch-key parser/expr->ast))))
               (build-index* [class query path classpath]
@@ -904,16 +870,16 @@
                   (when-not recursive?
                     (cond
                       (vector? query)
-                      (let [{props false joins true} (group-by join? query)]
+                      (let [{props false joins true} (group-by util/join? query)]
                         (swap! prop->classes
                           #(merge-with into %
                              (zipmap
                                (map get-dispatch-key props)
                                (repeat #{class}))))
                         (doseq [join joins]
-                          (let [[prop query'] (join-entry join)
+                          (let [[prop query'] (util/join-entry join)
                                 prop-dispatch-key (get-dispatch-key prop)
-                                recursion? (recursion? query')
+                                recursion? (util/recursion? query')
                                 query'        (if recursion?
                                                 query
                                                 query')]
@@ -1056,9 +1022,6 @@
            (ex-info (str "No queries exist for component path " cp)
              {:type :cellophane.next/no-queries})))))))
 
-(defn- unique-ident? [x]
-  (and (ident? x) (= '_ (second x))))
-
 (defn- normalize* [query data refs union-seen]
   (cond
     (= '[*] query) data
@@ -1079,10 +1042,10 @@
     (loop [q (seq query) ret data]
       (if-not (nil? q)
         (let [expr (first q)]
-          (if (join? expr)
-            (let [[k sel] (join-entry expr)
-                  recursive? (recursion? sel)
-                  union-entry (if (union? expr) sel union-seen)
+          (if (util/join? expr)
+            (let [[k sel] (util/join-entry expr)
+                  recursive? (util/recursion? sel)
+                  union-entry (if (util/union? expr) sel union-seen)
                   sel     (if recursive?
                             (if-not (nil? union-seen)
                               union-seen
@@ -1092,7 +1055,7 @@
                   v       (get data k)]
               (cond
                 ;; graph loop: db->tree leaves ident in place
-                (and recursive? (ident? v)) (recur (next q) ret)
+                (and recursive? (util/ident? v)) (recur (next q) ret)
                 ;; normalize one
                 (map? v)
                 (let [x (normalize* sel v refs union-entry)]
@@ -1184,7 +1147,7 @@
   [query data refs map-ident idents-seen union-expr recurse-key]
   {:pre [(map? refs)]}
   ;; support taking ident for data param
-  (let [data (cond-> data (ident? data) (->> map-ident (get-in refs)))]
+  (let [data (cond-> data (util/ident? data) (->> map-ident (get-in refs)))]
     (if (vector? data)
       ;; join
       (let [step (fn [ident]
@@ -1203,10 +1166,10 @@
       ;; map case
       (if (= '[*] query)
         data
-        (let [{props false joins true} (group-by #(or (join? %)
-                                                      (ident? %)
+        (let [{props false joins true} (group-by #(or (util/join? %)
+                                                      (util/ident? %)
                                                       (and (seq? %)
-                                                           (ident? (first %))))
+                                                           (util/ident? (first %))))
                                          query)
               props (mapv #(cond-> % (seq? %) first) props)]
           (loop [joins (seq joins) ret {}]
@@ -1214,30 +1177,30 @@
               (let [join        (first joins)
                     join        (cond-> join
                                   (seq? join) first)
-                    join        (cond-> join (ident? join) (hash-map '[*]))
-                    [key sel]   (join-entry join)
-                    recurse?    (recursion? sel)
+                    join        (cond-> join (util/ident? join) (hash-map '[*]))
+                    [key sel]   (util/join-entry join)
+                    recurse?    (util/recursion? sel)
                     recurse-key (when recurse? key)
-                    v           (if (ident? key)
+                    v           (if (util/ident? key)
                                   (if (= '_ (second key))
                                     (get refs (first key))
                                     (get-in refs (map-ident key)))
                                   (get data key))
-                    key         (cond-> key (unique-ident? key) first)
-                    v           (if (ident? v) (map-ident v) v)
+                    key         (cond-> key (util/unique-ident? key) first)
+                    v           (if (util/ident? v) (map-ident v) v)
                     limit       (if (number? sel) sel :none)
-                    union-entry (if (union? join) sel union-expr)
+                    union-entry (if (util/union? join) sel union-expr)
                     sel         (cond
                                   recurse? (if-not (nil? union-expr)
                                              union-entry
                                              (reduce-query-depth query key))
-                                  (and (ident? key) (union? join)) (get sel (first key))
-                                  (and (ident? v) (union? join)) (get sel (first v))
+                                  (and (util/ident? key) (util/union? join)) (get sel (first key))
+                                  (and (util/ident? v) (util/union? join)) (get sel (first v))
                                   :else sel)
                     graph-loop? (and recurse?
                                   (contains? (set (get idents-seen key)) v)
                                   (= :none limit))
-                    idents-seen (if (and (ident? v) recurse?)
+                    idents-seen (if (and (util/ident? v) recurse?)
                                   (-> idents-seen
                                     (update-in [key] (fnil conj #{}) v)
                                     (assoc-in [:last-ident key] v)) idents-seen)]
@@ -1276,8 +1239,8 @@
 
 (defn- merge-idents [tree config refs query]
   (let [{:keys [merge-ident indexer]} config
-        ident-joins (into {} (filter #(and (join? %)
-                                           (ident? (join-key %)))
+        ident-joins (into {} (filter #(and (util/join? %)
+                                           (util/ident? (util/join-key %)))
                                query))]
     (letfn [(step [tree' [ident props]]
               (if (:normalize config)
