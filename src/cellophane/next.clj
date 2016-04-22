@@ -29,7 +29,7 @@
     (keyword? (nth x 0))))
 
 (defn recursion? [x]
-  (or (identical? '... x)
+  (or (= '... x)
       (number? x)))
 
 (defn- expr->key
