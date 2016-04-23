@@ -202,7 +202,7 @@
   #{"xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole"
     "xlinkShow" "xlinkTitle" "xlinkType" "xmlBase" "xmlLang" "xmlSpace"})
 
-(declare noscript render-element)
+(declare render-element)
 
 (defrecord Element [tag attrs react-id react-key children]
   p/IReactDOMElement
@@ -224,6 +224,11 @@
     (assert (string? text))
     (str "<!-- react-text: " react-id " -->" text "<!-- /react-text -->")))
 
+(defrecord ReactEmpty [react-id]
+  p/IReactDOMElement
+  (-render-to-string [this]
+    (str "<!-- react-empty: " react-id " -->")))
+
 (defn text-node
   "HTML text node"
   [s]
@@ -234,8 +239,8 @@
   [s]
   (map->ReactText {:text s}))
 
-(defn- nil-element []
-  (noscript nil))
+(defn- react-empty-node []
+  (map->ReactEmpty {}))
 
 (defn- render-component [c]
   (if (or (nil? c) (satisfies? p/IReactDOMElement c))
@@ -262,7 +267,7 @@
                                 (satisfies? p/IReactComponent c)
                                 (let [rendered (if-let [element (render-component c)]
                                                  element
-                                                 (nil-element))]
+                                                 (react-empty-node))]
                                   (assoc rendered :react-key
                                     (some-> (:props c) :cellophaneclj$reactKey)))
 
@@ -380,7 +385,8 @@
               (cond
                 (instance? Text child) [(:s child)]
 
-                (instance? ReactText child) [(p/-render-to-string child)]
+                (or (instance? ReactText child)
+                    (instance? ReactEmpty child)) [(p/-render-to-string child)]
 
                 :else (collect-strs child)))))
         (cond-> worklist
@@ -430,7 +436,7 @@
   (let [element (if-let [element (cond-> x
                                    (satisfies? p/IReactComponent x) render-component)]
                   element
-                  (nil-element))
+                  (react-empty-node))
         element (assign-react-ids element)]
     (p/-render-to-string element)))
 

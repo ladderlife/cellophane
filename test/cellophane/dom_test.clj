@@ -361,13 +361,22 @@
       "foo"
       (nil-child-factory))))
 
+(defui NilChildrenComp
+  Object
+  (render [this]
+    (dom/div #js {}
+      nil)))
+
 (deftest test-nil-children
   (is (= (#'dom/render-to-str* (nil-child-factory))
-         "<noscript data-reactid=\".0\"></noscript>"))
+         "<!-- react-empty: 1 -->"))
+  (is (= (#'dom/render-to-str* ((cellophane/factory NilChildrenComp)))
+         "<div data-reactroot=\"\" data-reactid=\"1\"></div>"))
   (is (= (#'dom/render-to-str* ((cellophane/factory NilParent)))
-        (remove-whitespace "<div data-reactid=\".0\"><span data-reactid=\".0.0\">foo</span>
-                                <noscript data-reactid=\".0.1\"></noscript>
-                            </div>"))))
+         (remove-whitespace "<div data-reactroot=\"\" data-reactid=\"1\">
+                               <!-- react-text: 2 -->foo<!-- /react-text -->
+                               <!-- react-empty: 3 -->
+                             </div>"))))
 
 (defui CLPHN-3-Component-1
   Object
@@ -444,16 +453,6 @@
 (deftest test-om-644
   (is (= (#'dom/render-to-str* ((cellophane/factory SomeParent)))
          "<div data-reactroot=\"\" data-reactid=\"1\">foo</div>")))
-
-(defui NilChildrenComp
-  Object
-  (render [this]
-    (dom/div #js {}
-      nil)))
-
-(deftest test-nil-children
-  (is (= (#'dom/render-to-str* ((cellophane/factory NilChildrenComp)))
-         "<div data-reactroot=\"\" data-reactid=\"1\"></div>")))
 
 ;; React 15
 
