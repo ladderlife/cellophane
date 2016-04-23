@@ -173,7 +173,7 @@
     "xlinkShow" "xlinkTitle" "xlinkType" "xmlBase" "xmlLang" "xmlSpace" "y1" "y2" "y"
 
     ;; Special case
-    "data-reactid"})
+    "data-reactid" "data-reactroot"})
 
 (def no-suffix
   #{"animationIterationCount" "boxFlex" "boxFlexGroup" "boxOrdinalGroup"
@@ -202,7 +202,7 @@
   #{"xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole"
     "xlinkShow" "xlinkTitle" "xlinkType" "xmlBase" "xmlLang" "xmlSpace"})
 
-(declare span noscript render-element)
+(declare noscript render-element)
 
 (defrecord Element [tag attrs react-id react-key children]
   p/IReactDOMElement
@@ -218,10 +218,21 @@
     (assert (string? s))
     s))
 
+(defrecord ReactText [text react-id]
+  p/IReactDOMElement
+  (-render-to-string [this]
+    (assert (string? text))
+    (str "<!-- react-text: " react-id " -->" text "<!-- /react-text -->")))
+
 (defn text-node
   "HTML text node"
   [s]
   (map->Text {:s s}))
+
+(defn react-text-node
+  "HTML text node"
+  [s]
+  (map->ReactText {:text s}))
 
 (defn- nil-element []
   (noscript nil))
@@ -258,7 +269,7 @@
                                 (or (string? c) (number? c))
                                 (let [c (cond-> c (number? c) str)]
                                   (if (> child-node-count 1)
-                                    (span nil c)
+                                    (react-text-node c)
                                     (text-node c)))
                                 (nil? c) nil
                                 :else (do
@@ -354,15 +365,11 @@
   (or content
     (and (not (void-tags tag)))))
 
-(defn react-id-str [react-id]
-  (assert (vector? react-id))
-  (str "." (str/join "." react-id)))
-
 (defn collect-strs
   [{:keys [tag attrs react-id children] :as elem}]
   (let [attrs (cond-> attrs
                 (some? react-id)
-                (assoc :data-reactid (react-id-str react-id)))
+                (assoc :data-reactid react-id))
         container-tag? (container-tag? tag (seq children))]
     (loop [children (seq children)
            worklist ["<" tag (render-attr-map attrs) ">"]]
@@ -370,9 +377,12 @@
         (let [child (first children)]
           (recur (next children)
             (into worklist
-              (if (instance? Text child)
-                [(:s child)]
-                (collect-strs child)))))
+              (cond
+                (instance? Text child) [(:s child)]
+
+                (instance? ReactText child) [(p/-render-to-string child)]
+
+                :else (collect-strs child)))))
         (cond-> worklist
           container-tag? (into ["</" tag ">"]))))))
 
@@ -398,23 +408,21 @@
   {"=" "=0"
    ":" "=2"})
 
-;; https://github.com/facebook/react/blob/bef45/src/shared/utils/traverseAllChildren.js
-(defn wrap-user-provided-key [key]
-  (when key
-    (str "$" (str/replace key #"[=:]" key-escape-lookup))))
 
 (defn assign-react-ids
   ([elem]
-   (assign-react-ids elem [0]))
+   (let [elem (assoc-in elem [:attrs :data-reactroot] "")]
+     (assign-react-ids elem (atom 1))))
   ([elem id]
-   (assert (vector? id))
-   (let [elem (assoc elem :react-id id)]
+   (let [elem (assoc elem :react-id @id)]
+     (when-not (instance? Text elem)
+       (swap! id inc))
      (update-in elem [:children]
        (fn [children]
-         (map-indexed (fn [i c]
-                        (let [react-id (or (wrap-user-provided-key (:react-key c))
-                                         i)]
-                          (assign-react-ids c (conj id react-id)))) children))))))
+         (mapv
+           (fn [child]
+             (assign-react-ids child id))
+           children))))))
 
 (defn- render-to-str* [x]
   {:pre [(or (satisfies? p/IReactComponent x)
@@ -428,8 +436,7 @@
 
 ;; preserves testability without having to compute checksums
 (defn render-to-str [x]
-  (let [markup (render-to-str* x)
-        csum (chk/checksum markup)]
+  (let [markup (render-to-str* x)]
     (chk/assign-react-checksum markup)))
 
 (defn node
