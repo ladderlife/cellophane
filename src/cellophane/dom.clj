@@ -353,9 +353,22 @@
     (true? value) (str " " (name key))
     :else ""))
 
-(defn render-attr-map [attrs]
-  (apply str
-    (clojure.core/map render-attribute attrs)))
+;; some props assigned first in input and option. see:
+;; https://github.com/facebook/react/blob/1573b/src/renderers/dom/client/wrappers/ReactDOMOption.js#L60
+;; https://github.com/facebook/react/blob/1573b/src/renderers/dom/client/wrappers/ReactDOMInput.js#L71
+(defn render-attr-map [tag attrs]
+  (let [attrs (cond->> attrs
+                (= tag "input") (sort-by (fn [[k _]]
+                                           (if (= k :type)
+                                             -10000
+                                             0)))
+
+                (= tag "option") (sort-by (fn [[k _]]
+                                            (if (= k :selected)
+                                             -10000
+                                             0))))]
+    (apply str
+      (clojure.core/map render-attribute attrs))))
 
 (def ^{:doc "A list of elements that must be rendered without a closing tag."
        :private true}
@@ -377,7 +390,7 @@
                 (assoc :data-reactid react-id))
         container-tag? (container-tag? tag (seq children))]
     (loop [children (seq children)
-           worklist ["<" tag (render-attr-map attrs)
+           worklist ["<" tag (render-attr-map tag attrs)
                      (cond->> ">"
                        (not container-tag?) (str "/"))]]
       (if children
@@ -415,7 +428,6 @@
 (def key-escape-lookup
   {"=" "=0"
    ":" "=2"})
-
 
 (defn assign-react-ids
   ([elem]

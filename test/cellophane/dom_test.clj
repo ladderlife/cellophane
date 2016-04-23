@@ -484,3 +484,9 @@
                                 <div data-reactid=\"5\">5</div>
                               </div>
                             </div>"))))
+
+(deftest render-wrapped-attrs
+  (is (= (#'dom/render-to-str* (dom/input #js {:value "foo" :id "bar" :type "text"}))
+         "<input type=\"text\" value=\"foo\" id=\"bar\" data-reactroot=\"\" data-reactid=\"1\"/>"))
+  (is (= (#'dom/render-to-str* (dom/option #js {:disabled "" :label "foo" :selected ""}))
+         "<option selected=\"\" disabled=\"\" label=\"foo\" data-reactroot=\"\" data-reactid=\"1\"></option>")))
