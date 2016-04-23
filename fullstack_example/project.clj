@@ -12,7 +12,7 @@
                  [hiccup "1.0.5"]
                  [bidi "1.25.0"]
                  [com.ladderlife/cellophane "0.2.5-SNAPSHOT"]
-                 [org.omcljs/om "1.0.0-alpha33-SNAPSHOT"]
+                 [org.omcljs/om "1.0.0-alpha34"]
                  [ring/ring "1.4.0"]
                  [ring/ring-headers "0.2.0"]
                  [com.cognitect/transit-clj "0.8.285"]
