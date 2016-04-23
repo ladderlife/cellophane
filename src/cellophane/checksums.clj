@@ -6,40 +6,41 @@
 
 (def MOD 65521)
 
-;; TODO: refactor this into more idiomatic Clojure. ATM it's a simple port of
-;; https://github.com/facebook/react/blob/3b96650/src/shared/utils/adler32.js
-(defn- adler32 [data]
-  (let [a (atom 1)
-        b (atom 0)
-        l (count data)
-        m (bit-and l (bit-not 0x3))
-        i
-        (loop [i 0]
-          (if (< i m)
-            (let [n (Math/min (+ i 4096) m)]
-              (run!
-                (fn [idx]
-                  (let [a0 (swap! a + (nth data idx))
-                        a1 (swap! a + (nth data (+ idx 1)))
-                        a2 (swap! a + (nth data (+ idx 2)))
-                        a3 (swap! a + (nth data (+ idx 3)))]
-                    (swap! b + a0 a1 a2 a3)))
-                (range i n 4))
-              (swap! a mod MOD)
-              (swap! b mod MOD)
-              (recur (+ (last (range i n 4)) 4)))
-            i))]
-    (loop [i i]
-      (if (< i l)
-        (let [a' (swap! a + (nth data i))]
-          (swap! b + a')
-          (recur (inc i)))))
-    (swap! a mod MOD)
-    (swap! b mod MOD)
-    (bit-or @a (unchecked-int (bit-shift-left @b 16)))))
+;; Adapted from https://github.com/tonsky/rum
+(defn adler32 [sb]
+  (let [l (.length sb)
+        m (bit-and l -4)]
+    (loop [a (int 1)
+           b (int 0)
+           i 0
+           n (min (+ i 4096) m)]
+      (cond
+        (< i n)
+        (let [c0 (int (.charAt sb i))
+              c1 (int (.charAt sb (+ i 1)))
+              c2 (int (.charAt sb (+ i 2)))
+              c3 (int (.charAt sb (+ i 3)))
+              b  (+ b a c0
+                   a c0 c1
+                   a c0 c1 c2
+                   a c0 c1 c2 c3)
+              a  (+ a c0 c1 c2 c3)]
+          (recur (rem a MOD) (rem b MOD) (+ i 4) n))
+
+        (< i m)
+        (recur a b i (min (+ i 4096) m))
+
+        (< i l)
+        (let [c0 (int (.charAt sb i))]
+          (recur (+ a c0) (+ b a c0) (+ i 1) n))
+
+        :else
+        (let [a (rem a MOD)
+              b (rem b MOD)]
+          (bit-or (int a) (unchecked-int (bit-shift-left b 16))))))))
 
 (defn checksum [data]
-  (adler32 (.getBytes data)))
+  (adler32 data))
 
 (defn assign-react-checksum [markup]
   (->> (str/split markup #">" 2)
