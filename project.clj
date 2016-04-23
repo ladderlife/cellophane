@@ -15,4 +15,4 @@
   :target-path "target"
 
   :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.7.228"]
-                                  [cljsjs/react-dom-server "0.14.3-0"]]}})
+                                  [cljsjs/react-dom-server "15.0.1-1"]]}})

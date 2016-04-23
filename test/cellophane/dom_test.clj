@@ -19,9 +19,7 @@
   (let [container-tags (->> dom/tags
                          (map str)
                          (filter #(not (dom/container-tag? % nil))))]
-    ;; TODO: should we add mode for XHTML in which tags need to have a
-    ;; closing slash? e.g. "<input/>" vs "<input>"
-    (test-tags container-tags #(str "<" % " data-reactid=\"1\">"))))
+    (test-tags container-tags #(str "<" % " data-reactid=\"1\"/>"))))
 
 (defn simple-component []
   (dom/div nil "Hello World"))
@@ -111,17 +109,17 @@
     (dom/input {:type "text"
                 :placeholder "some text"
                 :id "stuff"})
-    "<input type=\"text\" placeholder=\"some text\" id=\"stuff\" data-reactroot=\"\" data-reactid=\"1\">"
+    "<input type=\"text\" placeholder=\"some text\" id=\"stuff\" data-reactroot=\"\" data-reactid=\"1\"/>"
 
     (dom/input {:id "stuff"
                 :placeholder "some text"
                 :type "text"})
-    "<input id=\"stuff\" placeholder=\"some text\" type=\"text\" data-reactroot=\"\" data-reactid=\"1\">"
+    "<input id=\"stuff\" placeholder=\"some text\" type=\"text\" data-reactroot=\"\" data-reactid=\"1\"/>"
 
     (dom/input {:placeholder "some text"
                 :id "stuff"
                 :type "text"})
-    "<input placeholder=\"some text\" id=\"stuff\" type=\"text\" data-reactroot=\"\" data-reactid=\"1\">"))
+    "<input placeholder=\"some text\" id=\"stuff\" type=\"text\" data-reactroot=\"\" data-reactid=\"1\"/>"))
 
 (deftest test-only-supported-attrs-rendered
   (are [element markup] (= (#'dom/render-to-str* element) (remove-whitespace markup))

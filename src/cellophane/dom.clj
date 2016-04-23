@@ -377,7 +377,9 @@
                 (assoc :data-reactid react-id))
         container-tag? (container-tag? tag (seq children))]
     (loop [children (seq children)
-           worklist ["<" tag (render-attr-map attrs) ">"]]
+           worklist ["<" tag (render-attr-map attrs)
+                     (cond->> ">"
+                       (not container-tag?) (str "/"))]]
       (if children
         (let [child (first children)]
           (recur (next children)
