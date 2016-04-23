@@ -89,7 +89,7 @@
                               </div>")))))
 
 (deftest test-format-react-attrs
-  (are [map res] (= (dom/render-attr-map map) res)
+  (are [map res] (= (dom/render-attr-map "div" map) res)
     {:htmlFor "something"} " for=\"something\""
     {:className "foo"} " class=\"foo\""
     {:srcLang "en"} " srclang=\"en\""
@@ -114,12 +114,12 @@
     (dom/input {:id "stuff"
                 :placeholder "some text"
                 :type "text"})
-    "<input id=\"stuff\" placeholder=\"some text\" type=\"text\" data-reactroot=\"\" data-reactid=\"1\"/>"
+    "<input type=\"text\" id=\"stuff\" placeholder=\"some text\" data-reactroot=\"\" data-reactid=\"1\"/>"
 
     (dom/input {:placeholder "some text"
                 :id "stuff"
                 :type "text"})
-    "<input placeholder=\"some text\" id=\"stuff\" type=\"text\" data-reactroot=\"\" data-reactid=\"1\"/>"))
+    "<input type=\"text\" placeholder=\"some text\" id=\"stuff\" data-reactroot=\"\" data-reactid=\"1\"/>"))
 
 (deftest test-only-supported-attrs-rendered
   (are [element markup] (= (#'dom/render-to-str* element) (remove-whitespace markup))
