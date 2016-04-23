@@ -71,7 +71,7 @@
   (dom/input
     #js {:ref       "editField"
          :className "edit"
-         :value     (om/get-state c :edit-text)
+         :value     (or (om/get-state c :edit-text) "")
          :onBlur    #(submit c props %)
          :onChange  #(change c %)
          :onKeyDown #(key-down c props %)}))
