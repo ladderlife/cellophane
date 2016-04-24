@@ -15,4 +15,10 @@
   :target-path "target"
 
   :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.7.228"]
-                                  [cljsjs/react-dom-server "15.0.1-1"]]}})
+                                  [cljsjs/react-dom-server "15.0.1-1"]]}
+             :perf {:source-paths ["perf"]
+                    :dependencies
+                    [[enlive    "1.1.6"]
+                     [criterium "0.4.4"]
+                     [hiccup    "1.0.5"]] }}
+  :aliases {"perf" ["with-profile" "perf" "trampoline" "run" "-m" "cellophane.perf"]})
