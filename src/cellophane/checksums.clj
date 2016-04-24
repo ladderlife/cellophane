@@ -7,7 +7,7 @@
 (def MOD 65521)
 
 ;; Adapted from https://github.com/tonsky/rum
-(defn adler32 [sb]
+(defn adler32 [^StringBuilder sb]
   (let [l (.length sb)
         m (bit-and l -4)]
     (loop [a (int 1)
@@ -39,10 +39,5 @@
               b (rem b MOD)]
           (bit-or (int a) (unchecked-int (bit-shift-left b 16))))))))
 
-(defn checksum [data]
-  (adler32 data))
-
-(defn assign-react-checksum [markup]
-  (->> (str/split markup #">" 2)
-    (interpose (str " data-react-checksum=\"" (checksum markup) "\">"))
-    str/join))
+(defn assign-react-checksum [^StringBuilder sb]
+  (.insert sb (.indexOf sb ">") (str " data-react-checksum=\"" (adler32 sb) "\"")))

@@ -1,7 +1,7 @@
 (ns cellophane.protocols)
 
 (defprotocol IReactDOMElement
-  (-render-to-string [this] "renders a DOM node to string."))
+  (^String -render-to-string [this sb] "renders a DOM node to string."))
 
 (defprotocol IReactChildren
   (-children [this] "returns the element's children"))

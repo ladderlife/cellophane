@@ -4,7 +4,7 @@
             [cellophane.checksums :as chk]))
 
 (deftest test-checksum
-  (are [data res] (= (chk/checksum data) res)
+  (are [data res] (= (chk/adler32 (StringBuilder. data)) res)
     "<div data-reactid=\".p55bcrvgg0\"></div>" -47641439
     "<div data-reactid=\".0\" id=\"foo\">Hello World</div>" -1847259110
     (remove-whitespace "<div data-reactid=\".0\">
@@ -25,7 +25,7 @@
  regione eu. Ne vis justo liber." -1507348871))
 
 (deftest test-assign-react-checksum
-  (is (= (chk/assign-react-checksum "<div data-reactid=\".p55bcrvgg0\"></div>")
+  (is (= (str (chk/assign-react-checksum (StringBuilder. "<div data-reactid=\".p55bcrvgg0\"></div>")))
          "<div data-reactid=\".p55bcrvgg0\" data-react-checksum=\"-47641439\"></div>"))
-  (is (= (chk/assign-react-checksum "<div data-reactid=\".0\" id=\"foo\">Hello World</div>")
+  (is (= (str (chk/assign-react-checksum (StringBuilder. "<div data-reactid=\".0\" id=\"foo\">Hello World</div>")))
          "<div data-reactid=\".0\" id=\"foo\" data-react-checksum=\"-1847259110\">Hello World</div>")))

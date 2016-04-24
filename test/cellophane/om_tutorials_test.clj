@@ -70,10 +70,10 @@
                          </div>")]
     (testing "render with factory"
       (let [ctor (cellophane/factory AnimalsList)]
-        (is (= (#'dom/render-to-str* (ctor @animals-app-state)) result-markup))))
+        (is (= (str (#'dom/render-to-str* (ctor @animals-app-state))) result-markup))))
     (testing "render with reconciler & add-root!"
       (let [c (cellophane/add-root! animals-reconciler AnimalsList nil)
-            markup-str (#'dom/render-to-str* c)]
+            markup-str (str (#'dom/render-to-str* c))]
         (is (= (class (cellophane/app-root animals-reconciler)) AnimalsList))
         (is (= markup-str result-markup))))))
 
@@ -127,7 +127,7 @@
 
 (deftest test-render-links-tutorial
   (let [c (cellophane/add-root! links-reconciler LinksSomeList nil)]
-    (is (= (#'dom/render-to-str* c)
+    (is (= (str (#'dom/render-to-str* c))
            (remove-whitespace
              "<div data-reactroot=\"\" data-reactid=\"1\">
                 <h2 data-reactid=\"2\">A List!</h2>
@@ -256,7 +256,7 @@
 
 (deftest test-cian-tutorial
   (let [c (cellophane/add-root! cian-reconciler RootView nil)]
-    (is (= (#'dom/render-to-str* c)
+    (is (= (str (#'dom/render-to-str* c))
            (remove-whitespace "<div data-reactroot=\"\" data-reactid=\"1\">
                                  <h2 data-reactid=\"2\">List A</h2>
                                  <ul data-reactid=\"3\">
@@ -434,72 +434,72 @@
 
 (deftest test-unions-tutorial
     (let [c (cellophane/add-root! union-reconciler Dashboard nil)]
-      (is (= (#'dom/render-to-str* c)
-            (remove-whitespace
-              "<ul style=\"padding:0;\" data-reactroot=\"\" data-reactid=\"1\">
-                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"2\">
-                  <div data-reactid=\"3\">
-                    <div data-reactid=\"4\">
-                      <h3 data-reactid=\"5\">A Post!</h3>
-                      <h4 data-reactid=\"6\">Laura Smith</h4>
-                      <p data-reactid=\"7\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
-                    </div>
-                  </div>
-                  <div data-reactid=\"8\">
-                    <p data-reactid=\"9\">Favorites: 0</p>
-                    <button data-reactid=\"10\">Favorite!</button>
-                  </div>
-                </li>
-                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"11\">
-                  <div data-reactid=\"12\">
-                    <div data-reactid=\"13\">
-                      <h3 data-reactid=\"14\">Photo: A Photo!</h3>
-                      <div data-reactid=\"15\">photo.jpg</div>
-                      <p data-reactid=\"16\">Caption: </p>
-                    </div>
-                  </div>
-                  <div data-reactid=\"17\">
-                    <p data-reactid=\"18\">Favorites: 0</p>
-                    <button data-reactid=\"19\">Favorite!</button>
-                  </div>
-                </li>
-                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"20\">
-                  <div data-reactid=\"21\">
-                    <div data-reactid=\"22\">
-                      <h3 data-reactid=\"23\">Another Post!</h3>
-                      <h4 data-reactid=\"24\">Jim Jacobs</h4>
-                      <p data-reactid=\"25\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
-                    </div>
-                  </div>
-                  <div data-reactid=\"26\">
-                    <p data-reactid=\"27\">Favorites: 0</p>
-                    <button data-reactid=\"28\">Favorite!</button>
-                  </div>
-                </li>
-                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"29\">
-                  <div data-reactid=\"30\">
-                    <div data-reactid=\"31\">
-                      <h3 data-reactid=\"32\">Graphic: Charts and Stufff!</h3>
-                      <div data-reactid=\"33\">chart.jpg</div>
-                    </div>
-                  </div>
-                  <div data-reactid=\"34\">
-                    <p data-reactid=\"35\">Favorites: 0</p>
-                    <button data-reactid=\"36\">Favorite!</button>
-                  </div>
-                </li>
-                <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"37\">
-                  <div data-reactid=\"38\">
-                    <div data-reactid=\"39\">
-                      <h3 data-reactid=\"40\">Yet Another Post!</h3>
-                      <h4 data-reactid=\"41\">May Fields</h4>
-                      <p data-reactid=\"42\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
-                    </div>
-                  </div>
-                  <div data-reactid=\"43\">
-                    <p data-reactid=\"44\">Favorites: 0</p>
-                    <button data-reactid=\"45\">Favorite!</button>
-                  </div>
-                </li>
-              </ul>")))))
+      (is (= (str (#'dom/render-to-str* c))
+             (remove-whitespace
+               "<ul style=\"padding:0;\" data-reactroot=\"\" data-reactid=\"1\">
+                 <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"2\">
+                   <div data-reactid=\"3\">
+                     <div data-reactid=\"4\">
+                       <h3 data-reactid=\"5\">A Post!</h3>
+                       <h4 data-reactid=\"6\">Laura Smith</h4>
+                       <p data-reactid=\"7\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
+                     </div>
+                   </div>
+                   <div data-reactid=\"8\">
+                     <p data-reactid=\"9\">Favorites: 0</p>
+                     <button data-reactid=\"10\">Favorite!</button>
+                   </div>
+                 </li>
+                 <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"11\">
+                   <div data-reactid=\"12\">
+                     <div data-reactid=\"13\">
+                       <h3 data-reactid=\"14\">Photo: A Photo!</h3>
+                       <div data-reactid=\"15\">photo.jpg</div>
+                       <p data-reactid=\"16\">Caption: </p>
+                     </div>
+                   </div>
+                   <div data-reactid=\"17\">
+                     <p data-reactid=\"18\">Favorites: 0</p>
+                     <button data-reactid=\"19\">Favorite!</button>
+                   </div>
+                 </li>
+                 <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"20\">
+                   <div data-reactid=\"21\">
+                     <div data-reactid=\"22\">
+                       <h3 data-reactid=\"23\">Another Post!</h3>
+                       <h4 data-reactid=\"24\">Jim Jacobs</h4>
+                       <p data-reactid=\"25\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
+                     </div>
+                   </div>
+                   <div data-reactid=\"26\">
+                     <p data-reactid=\"27\">Favorites: 0</p>
+                     <button data-reactid=\"28\">Favorite!</button>
+                   </div>
+                 </li>
+                 <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"29\">
+                   <div data-reactid=\"30\">
+                     <div data-reactid=\"31\">
+                       <h3 data-reactid=\"32\">Graphic: Charts and Stufff!</h3>
+                       <div data-reactid=\"33\">chart.jpg</div>
+                     </div>
+                   </div>
+                   <div data-reactid=\"34\">
+                     <p data-reactid=\"35\">Favorites: 0</p>
+                     <button data-reactid=\"36\">Favorite!</button>
+                   </div>
+                 </li>
+                 <li style=\"padding:10px;border-bottom:1px solid black;\" data-reactid=\"37\">
+                   <div data-reactid=\"38\">
+                     <div data-reactid=\"39\">
+                       <h3 data-reactid=\"40\">Yet Another Post!</h3>
+                       <h4 data-reactid=\"41\">May Fields</h4>
+                       <p data-reactid=\"42\">Lorem ipsum dolor sit amet, quem atomorum te quo</p>
+                     </div>
+                   </div>
+                   <div data-reactid=\"43\">
+                     <p data-reactid=\"44\">Favorites: 0</p>
+                     <button data-reactid=\"45\">Favorite!</button>
+                   </div>
+                 </li>
+               </ul>")))))
 

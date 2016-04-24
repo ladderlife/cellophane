@@ -204,30 +204,59 @@
 
 (declare render-element)
 
+(defn append!
+  ([^StringBuilder sb s0] (.append sb s0))
+  ([^StringBuilder sb s0 s1]
+   (.append sb s0)
+   (.append sb s1))
+  ([^StringBuilder sb s0 s1 s2]
+   (.append sb s0)
+   (.append sb s1)
+   (.append sb s2))
+  ([^StringBuilder sb s0 s1 s2 s3]
+   (.append sb s0)
+   (.append sb s1)
+   (.append sb s2)
+   (.append sb s3))
+  ([^StringBuilder sb s0 s1 s2 s3 s4]
+   (.append sb s0)
+   (.append sb s1)
+   (.append sb s2)
+   (.append sb s3)
+   (.append sb s4))
+  ([^StringBuilder sb s0 s1 s2 s3 s4 & rest]
+   (.append sb s0)
+   (.append sb s1)
+   (.append sb s2)
+   (.append sb s3)
+   (.append sb s4)
+   (doseq [s rest]
+     (.append sb s))))
+
 (defrecord Element [tag attrs react-id react-key children]
   p/IReactDOMElement
-  (-render-to-string [this]
-    (render-element this))
+  (-render-to-string [this sb]
+    (render-element this sb))
 
   p/IReactChildren
   (-children [this] children))
 
 (defrecord Text [s]
   p/IReactDOMElement
-  (-render-to-string [this]
+  (-render-to-string [this sb]
     (assert (string? s))
-    s))
+    (append! sb s)))
 
 (defrecord ReactText [text react-id]
   p/IReactDOMElement
-  (-render-to-string [this]
+  (-render-to-string [this sb]
     (assert (string? text))
-    (str "<!-- react-text: " react-id " -->" text "<!-- /react-text -->")))
+    (append! sb "<!-- react-text: " react-id " -->" text "<!-- /react-text -->")))
 
 (defrecord ReactEmpty [react-id]
   p/IReactDOMElement
-  (-render-to-string [this]
-    (str "<!-- react-empty: " react-id " -->")))
+  (-render-to-string [this sb]
+    (append! sb "<!-- react-empty: " react-id " -->")))
 
 (defn text-node
   "HTML text node"
@@ -313,10 +342,10 @@
 
 (defn escape-html
   "Change special characters into HTML character entities."
-  [text]
+  ^String [^String text]
   {:pre [(string? text)]
    :post [(string? %)]}
-  (.. ^String (clojure.core/name text)
+  (.. (clojure.core/name text)
     (replace "&"  "&amp;")
     (replace "<"  "&lt;")
     (replace ">"  "&gt;")
@@ -383,34 +412,18 @@
   (or content
     (and (not (void-tags tag)))))
 
-(defn collect-strs
-  [{:keys [tag attrs react-id children] :as elem}]
-  (let [attrs (cond-> attrs
-                (some? react-id)
-                (assoc :data-reactid react-id))
-        container-tag? (container-tag? tag (seq children))]
-    (loop [children (seq children)
-           worklist ["<" tag (render-attr-map tag attrs)
-                     (cond->> ">"
-                       (not container-tag?) (str "/"))]]
-      (if children
-        (let [child (first children)]
-          (recur (next children)
-            (into worklist
-              (cond
-                (instance? Text child) [(:s child)]
-
-                (or (instance? ReactText child)
-                    (instance? ReactEmpty child)) [(p/-render-to-string child)]
-
-                :else (collect-strs child)))))
-        (cond-> worklist
-          container-tag? (into ["</" tag ">"]))))))
-
 (defn render-element
   "Render a tag vector as a HTML element string."
-  [element]
-  (apply str (collect-strs element)))
+  ^String [{:keys [tag attrs react-id children]} sb]
+  (let [attrs (cond-> attrs
+                (some? react-id)
+                (assoc :data-reactid react-id))]
+    (if (container-tag? tag (seq children))
+      (do
+        (append! sb "<" tag (render-attr-map tag attrs) ">")
+        (run! #(p/-render-to-string % sb) children)
+        (append! sb "</" tag ">"))
+      (append! sb "<" tag (render-attr-map tag attrs) "/>"))))
 
 (defn gen-tag-fn [tag]
   `(defn ~tag [~'attrs & ~'children]
@@ -451,13 +464,15 @@
                                    (satisfies? p/IReactComponent x) render-component)]
                   element
                   (react-empty-node))
-        element (assign-react-ids element)]
-    (p/-render-to-string element)))
+        element (assign-react-ids element)
+        sb (StringBuilder.)]
+    (p/-render-to-string element sb)))
 
 ;; preserves testability without having to compute checksums
 (defn render-to-str [x]
-  (let [markup (render-to-str* x)]
-    (chk/assign-react-checksum markup)))
+  (let [sb (render-to-str* x)]
+    (chk/assign-react-checksum sb)
+    (str sb)))
 
 (defn node
   "Returns the dom node associated with a component's React ref."

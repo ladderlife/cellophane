@@ -225,11 +225,13 @@
 
 (deftest test-dom-node
   (let [factory (cellophane/factory ReactRefsParent)
-        c (factory)]
+        c (factory)
+        sb (StringBuilder.)]
     (p/-render c)
     (is (instance? cellophane.dom.Element (dom/node c)))
     (is (instance? cellophane.dom.Element (dom/node c "foo")))
-    (is (= (dom/render-element (dom/node c "foo"))
+    (dom/render-element (dom/node c "foo") sb)
+    (is (= (str sb)
            "<div>some text</div>"))))
 
 (defui ClassPathChild
