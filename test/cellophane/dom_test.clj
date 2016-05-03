@@ -7,7 +7,7 @@
 
 (defn test-tags [tags res-fn]
   `(are [element# res#] (let [sb# (StringBuilder.)]
-                          (dom/render-element {:tag element# :react-id 1} sb#)
+                          (dom/render-element! {:tag element#} (volatile! 1) sb#)
                           (= (str sb#) res#))
      ~@(mapcat (fn [tag#] [tag# (res-fn tag#)]) tags)))
 
@@ -15,13 +15,13 @@
   (let [container-tags (->> dom/tags
                          (map str)
                          (filter #(dom/container-tag? % nil)))]
-    (test-tags container-tags #(str "<" % " data-reactid=\"1\">" "</" % ">"))))
+    (test-tags container-tags #(str "<" % " data-reactroot=\"\" data-reactid=\"1\">" "</" % ">"))))
 
 (defmacro test-void-tags []
   (let [container-tags (->> dom/tags
                          (map str)
                          (filter #(not (dom/container-tag? % nil))))]
-    (test-tags container-tags #(str "<" % " data-reactid=\"1\"/>"))))
+    (test-tags container-tags #(str "<" % " data-reactroot=\"\" data-reactid=\"1\"/>"))))
 
 (defn simple-component []
   (dom/div nil "Hello World"))
@@ -41,7 +41,7 @@
     (test-void-tags))
   (testing "render-element renders simple function elements"
     (are [component res] (let [sb (StringBuilder.)]
-                           (dom/render-element (dom/assign-react-ids component) sb)
+                           (dom/render-element! component (volatile! 1) sb)
                            (= (str sb) res))
       (simple-component) "<div data-reactroot=\"\" data-reactid=\"1\">Hello World</div>"
       (simple-nested-component) (remove-whitespace
@@ -106,16 +106,13 @@
 
 (deftest test-ref-is-elided-in-props
   (let [sb (StringBuilder.)]
-    (dom/render-element
-             (dom/assign-react-ids
-               (dom/div #js {:ref "someDiv"}))
-             sb)
+    (dom/render-element! (dom/div #js {:ref "someDiv"}) (volatile! 1) sb)
     (is (= (str sb)
           "<div data-reactroot=\"\" data-reactid=\"1\"></div>"))))
 
 (deftest test-attrs-rendered-in-declaration-order
   (are [element res] (let [sb (StringBuilder.)]
-                       (dom/render-element (dom/assign-react-ids element) sb)
+                       (dom/render-element! element (volatile! 1) sb)
                        (= (str sb) res))
     (dom/input {:type "text"
                 :placeholder "some text"
@@ -160,7 +157,7 @@
 
 (deftest test-empty-styles-not-rendered
   (let [sb (StringBuilder.)]
-    (dom/render-element (dom/assign-react-ids (dom/div {:style {}})) sb)
+    (dom/render-element! (dom/div {:style {}}) (volatile! 1) sb)
     (is (= (str sb)
           "<div data-reactroot=\"\" data-reactid=\"1\"></div>"))))
 
@@ -287,7 +284,7 @@
 (deftest test-render-multiple-text-children
   (testing "rendering an element with multiple children converts text nodes to <span>"
     (are [comp res] (let [sb (StringBuilder.)]
-                      (dom/render-element (dom/assign-react-ids (comp)) sb)
+                      (dom/render-element! (comp) (volatile! 1) sb)
                       (= (str sb)
                          (remove-whitespace res)))
       MultipleTextChildren "<div data-reactroot=\"\" data-reactid=\"1\">
@@ -375,7 +372,8 @@
   (render [this]
     (dom/div nil
       "foo"
-      (nil-child-factory))))
+      (nil-child-factory)
+      "bar")))
 
 (defui NilChildrenComp
   Object
@@ -392,7 +390,7 @@
          (remove-whitespace "<div data-reactroot=\"\" data-reactid=\"1\">
                                <!-- react-text: 2 -->foo<!-- /react-text -->
                                <!-- react-empty: 3 -->
-                             </div>"))))
+                               <!-- react-text: 4 -->bar<!-- /react-text --></div>"))))
 
 (defui CLPHN-3-Component-1
   Object
@@ -482,12 +480,12 @@
 
 (deftest react-15-render
   (is (= (dom/render-to-str ((cellophane/factory React15Comp)))
-        (remove-whitespace "<div data-reactroot=\"\" data-reactid=\"1\" data-react-checksum=\"1635398171\">
-                              <div data-reactid=\"2\">
-                                <!-- react-text: 3 -->nested<!-- /react-text -->
-                                <div data-reactid=\"4\">other</div>
-                              </div>
-                            </div>")))
+         (remove-whitespace "<div data-reactroot=\"\" data-reactid=\"1\" data-react-checksum=\"1635398171\">
+                               <div data-reactid=\"2\">
+                                 <!-- react-text: 3 -->nested<!-- /react-text -->
+                                 <div data-reactid=\"4\">other</div>
+                               </div>
+                             </div>")))
   (is (= (dom/render-to-str
            (dom/div nil
              (dom/div nil

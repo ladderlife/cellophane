@@ -202,7 +202,7 @@
   #{"xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole"
     "xlinkShow" "xlinkTitle" "xlinkType" "xmlBase" "xmlLang" "xmlSpace"})
 
-(declare render-element)
+(declare render-element!)
 
 (defn append!
   ([^StringBuilder sb s0] (.append sb s0))
@@ -233,30 +233,32 @@
    (doseq [s rest]
      (.append sb s))))
 
-(defrecord Element [tag attrs react-id react-key children]
+(defrecord Element [tag attrs react-key children]
   p/IReactDOMElement
-  (-render-to-string [this sb]
-    (render-element this sb))
+  (-render-to-string [this react-id sb]
+    (render-element! this react-id sb))
 
   p/IReactChildren
   (-children [this] children))
 
 (defrecord Text [s]
   p/IReactDOMElement
-  (-render-to-string [this sb]
+  (-render-to-string [this react-id sb]
     (assert (string? s))
     (append! sb s)))
 
-(defrecord ReactText [text react-id]
+(defrecord ReactText [text]
   p/IReactDOMElement
-  (-render-to-string [this sb]
+  (-render-to-string [this react-id sb]
     (assert (string? text))
-    (append! sb "<!-- react-text: " react-id " -->" text "<!-- /react-text -->")))
+    (append! sb "<!-- react-text: " @react-id " -->" text "<!-- /react-text -->")
+    (vswap! react-id inc)))
 
-(defrecord ReactEmpty [react-id]
+(defrecord ReactEmpty []
   p/IReactDOMElement
-  (-render-to-string [this sb]
-    (append! sb "<!-- react-empty: " react-id " -->")))
+  (-render-to-string [this react-id sb]
+    (append! sb "<!-- react-empty: " @react-id " -->")
+    (vswap! react-id inc)))
 
 (defn text-node
   "HTML text node"
@@ -279,15 +281,13 @@
 (defn element
   "Creates a dom node."
   [{:keys [tag attrs react-key children] :as elem}]
-                                        ;{:post [(valid-element? %)]}
   (assert (name tag))
   (assert (or (nil? attrs) (map? attrs)) (format "elem %s attrs invalid" elem))
   (let [children (flatten children)
         child-node-count (count children)
-        nproc (.. Runtime getRuntime availableProcessors)
-        reduce-fn (if (> child-node-count (/ nproc 2))
-                 r/reduce
-                 reduce)
+        reduce-fn (if (> child-node-count 1)
+                    r/reduce
+                    reduce)
         children (reduce-fn
                    (fn [res c]
                      (let [c' (cond
@@ -440,22 +440,22 @@
   (or content
     (and (not (void-tags tag)))))
 
-(defn render-element
+(defn render-element!
   "Render a tag vector as a HTML element string."
-  [{:keys [tag attrs react-id children]} ^StringBuilder sb]
-  (let [attrs (cond-> attrs
-                (some? react-id)
-                (assoc :data-reactid react-id))]
-    (if (container-tag? tag (seq children))
-      (do
-        (append! sb "<" tag)
-        (render-attr-map! sb tag attrs)
-        (append! sb ">")
-        (run! #(p/-render-to-string % sb) children)
-        (append! sb "</" tag ">"))
-      (do (append! sb "<" tag)
-          (render-attr-map! sb tag attrs)
-          (append! sb "/>")))))
+  [{:keys [tag attrs children]} react-id ^StringBuilder sb]
+  (append! sb "<" tag)
+  (render-attr-map! sb tag attrs)
+  (let [react-id-val @react-id]
+    (when (= react-id-val 1)
+      (append! sb " data-reactroot=\"\""))
+    (append! sb " data-reactid=\"" react-id-val "\"")
+    (vswap! react-id inc))
+  (if (container-tag? tag (seq children))
+    (do
+      (append! sb ">")
+      (run! #(p/-render-to-string % react-id sb) children)
+      (append! sb "</" tag ">"))
+    (append! sb "/>")))
 
 (defn gen-tag-fn [tag]
   `(defn ~tag [~'attrs & ~'children]
@@ -474,34 +474,19 @@
   {"=" "=0"
    ":" "=2"})
 
-(defn assign-react-ids
-  ([elem]
-   (let [elem (assoc-in elem [:attrs :data-reactroot] "")]
-     (assign-react-ids elem (volatile! 1))))
-  ([elem id]
-   (let [elem (assoc elem :react-id @id)]
-     (when-not (instance? Text elem)
-       (vswap! id inc))
-     (update-in elem [:children]
-       (fn [children]
-         (mapv
-           (fn [child]
-             (assign-react-ids child id))
-           children))))))
-
-(defn- render-to-str* [x]
+;; preserves testability without having to compute checksums
+(defn- render-to-str* ^StringBuilder [x]
   {:pre [(or (satisfies? p/IReactComponent x)
              (satisfies? p/IReactDOMElement x))]}
   (let [element (if-let [element (cond-> x
                                    (satisfies? p/IReactComponent x) render-component)]
                   element
                   (react-empty-node))
-        element (assign-react-ids element)
         sb (StringBuilder.)]
-    (p/-render-to-string element sb)))
+    (p/-render-to-string element (volatile! 1) sb)
+    sb))
 
-;; preserves testability without having to compute checksums
-(defn render-to-str [x]
+(defn render-to-str ^String [x]
   (let [sb (render-to-str* x)]
     (chk/assign-react-checksum sb)
     (str sb)))

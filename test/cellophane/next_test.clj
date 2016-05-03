@@ -230,9 +230,9 @@
     (p/-render c)
     (is (instance? cellophane.dom.Element (dom/node c)))
     (is (instance? cellophane.dom.Element (dom/node c "foo")))
-    (dom/render-element (dom/node c "foo") sb)
+    (dom/render-element! (dom/node c "foo") (volatile! 1) sb)
     (is (= (str sb)
-           "<div>some text</div>"))))
+           "<div data-reactroot=\"\" data-reactid=\"1\">some text</div>"))))
 
 (defui ClassPathChild
   static cellophane/IQuery
