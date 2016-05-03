@@ -317,8 +317,8 @@
                    :react-key react-key
                    :children children})))
 
-(defn camel->other-case [sep]
-  (fn [s]
+(defn camel->other-case [^String sep]
+  (fn ^String [^String s]
     (->> (str/split s #"(?=[A-Z])")
       (clojure.core/map #(reduce str %))
       (clojure.core/map str/lower-case)
@@ -330,7 +330,7 @@
 (def camel->colon-between
   (camel->other-case ":"))
 
-(defn coerce-attr-key [k]
+(defn coerce-attr-key ^String [^String k]
   (cond
     (contains? lower-case-attrs k) (str/lower-case k)
     (contains? kebab-case-attrs k) (camel->kebab-case k)
@@ -340,52 +340,81 @@
     (contains? colon-between-attrs k) (camel->colon-between k)
     :else k))
 
-(defn escape-html
-  "Change special characters into HTML character entities."
-  ^String [^String text]
-  {:pre [(string? text)]
-   :post [(string? %)]}
-  (.. (clojure.core/name text)
-    (replace "&"  "&amp;")
-    (replace "<"  "&lt;")
-    (replace ">"  "&gt;")
-    (replace "\"" "&quot;")))
+(defn escape-html ^String [^String s]
+  (let [len (count s)]
+    (loop [^StringBuilder sb nil
+           i                 (int 0)]
+      (if (< i len)
+        (let [char (.charAt s i)
+              repl (case char
+                     \& "&amp;"
+                     \< "&lt;"
+                     \> "&gt;"
+                     \" "&quot;"
+                     \' "&#x27;"
+                     nil)]
+          (if (nil? repl)
+            (if (nil? sb)
+              (recur nil (inc i))
+              (recur (doto sb
+                       (.append char))
+                     (inc i)))
+            (if (nil? sb)
+              (recur (doto (StringBuilder.)
+                       (.append s 0 i)
+                       (.append repl))
+                     (inc i))
+              (recur (doto sb
+                       (.append repl))
+                     (inc i)))))
+        (if (nil? sb) s (str sb))))))
 
-(defn xml-attribute [name value]
+(defn render-xml-attribute! [sb name value]
   (let [name (coerce-attr-key (clojure.core/name name))]
-    (str " " name "=\"" (escape-html value) "\"")))
+    (append! sb " " name "=\""
+      (cond-> value
+        (string? value) escape-html) "\"")))
 
-(defn format-styles [styles]
+(defn normalize-styles! [sb styles]
   (letfn [(coerce-value [k v]
             (cond-> v
               (and (number? v)
-                   (not (contains? no-suffix k))
-                   (pos? v))
+                (not (contains? no-suffix k))
+                (pos? v))
               (str "px")))]
-    (reduce (fn [s [k v]]
-              (let [k (name k)]
-                (str s (camel->kebab-case k) ":" (coerce-value k v) ";")))
-      "" styles)))
+    (run! (fn [[k v]]
+            (let [k (name k)]
+              (append! sb (camel->kebab-case k) ":" (coerce-value k v) ";")))
+      styles)))
 
-(defn render-attribute [[key value]]
+(defn render-styles! [sb styles]
+  (when-not (empty? styles)
+    (append! sb " style=\"")
+    (normalize-styles! sb styles)
+    (append! sb "\"")))
+
+(defn render-attribute! [sb [key value]]
   (cond
-    (fn? value) ""
-    (not value) ""
-    (= key :style) (cond->> (format-styles value)
-                      (not (empty? value)) (xml-attribute key))
+    (or (fn? value)
+        (not value))
+    nil
+
+    (= key :style)
+    (render-styles! sb value)
     ;; TODO: not sure if we want to limit values to strings/numbers
     (and (contains? supported-attrs (name key))
          (or (string? value) (number? value)))
-    (xml-attribute key (cond-> value
-                         (or (keyword? value)
-                             (number? value)) str))
-    (true? value) (str " " (name key))
-    :else ""))
+    (render-xml-attribute! sb key value)
+
+    (true? value)
+    (append! sb " " (name key))
+
+    :else nil))
 
 ;; some props assigned first in input and option. see:
 ;; https://github.com/facebook/react/blob/1573b/src/renderers/dom/client/wrappers/ReactDOMOption.js#L60
 ;; https://github.com/facebook/react/blob/1573b/src/renderers/dom/client/wrappers/ReactDOMInput.js#L71
-(defn render-attr-map [tag attrs]
+(defn render-attr-map! [sb tag attrs]
   (let [attrs (cond->> attrs
                 (= tag "input") (sort-by (fn [[k _]]
                                            (if (= k :type)
@@ -396,8 +425,7 @@
                                             (if (= k :selected)
                                              -10000
                                              0))))]
-    (apply str
-      (clojure.core/map render-attribute attrs))))
+    (run! (partial render-attribute! sb) attrs)))
 
 (def ^{:doc "A list of elements that must be rendered without a closing tag."
        :private true}
@@ -414,16 +442,20 @@
 
 (defn render-element
   "Render a tag vector as a HTML element string."
-  ^String [{:keys [tag attrs react-id children]} sb]
+  [{:keys [tag attrs react-id children]} ^StringBuilder sb]
   (let [attrs (cond-> attrs
                 (some? react-id)
                 (assoc :data-reactid react-id))]
     (if (container-tag? tag (seq children))
       (do
-        (append! sb "<" tag (render-attr-map tag attrs) ">")
+        (append! sb "<" tag)
+        (render-attr-map! sb tag attrs)
+        (append! sb ">")
         (run! #(p/-render-to-string % sb) children)
         (append! sb "</" tag ">"))
-      (append! sb "<" tag (render-attr-map tag attrs) "/>"))))
+      (do (append! sb "<" tag)
+          (render-attr-map! sb tag attrs)
+          (append! sb "/>")))))
 
 (defn gen-tag-fn [tag]
   `(defn ~tag [~'attrs & ~'children]
@@ -445,11 +477,11 @@
 (defn assign-react-ids
   ([elem]
    (let [elem (assoc-in elem [:attrs :data-reactroot] "")]
-     (assign-react-ids elem (atom 1))))
+     (assign-react-ids elem (volatile! 1))))
   ([elem id]
    (let [elem (assoc elem :react-id @id)]
      (when-not (instance? Text elem)
-       (swap! id inc))
+       (vswap! id inc))
      (update-in elem [:children]
        (fn [children]
          (mapv
