@@ -74,7 +74,7 @@ The simplest case is to feed `dom/render-to-str` a component instance created wi
 (def simple-factory (om/factory SimpleComponent))
 
 (dom/render-to-str (simple-factory))
-;; => "<div><div data-reactid=\".0\">Hello, world!</div></div>"
+;; => "<div data-reactroot=\"\" data-reactid=\"1\" data-react-checksum=\"1632637923\">Hello, world!</div>"
 
 ```
 
@@ -133,24 +133,21 @@ A full stack TodoMVC example with server-side rendering can be found in [fullsta
 
 (dom/render-to-str component)
 
-;; => "<div>
-;;      <div data-reactid=\".0\">
-;;        <h2 data-reactid=\".0.0\">Animals</h2>
-;;        <ul data-reactid=\".0.1\">
-;;          <li data-reactid=\".0.1.0\">1. Ant</li>
-;;          <li data-reactid=\".0.1.1\">2. Antelope</li>
-;;          <li data-reactid=\".0.1.2\">3. Bird</li>
-;;          <li data-reactid=\".0.1.3\">4. Cat</li>
-;;          <li data-reactid=\".0.1.4\">5. Dog</li>
-;;          <li data-reactid=\".0.1.5\">6. Lion</li>
-;;          <li data-reactid=\".0.1.6\">7. Mouse</li>
-;;          <li data-reactid=\".0.1.7\">8. Monkey</li>
-;;          <li data-reactid=\".0.1.8\">9. Snake</li>
-;;          <li data-reactid=\".0.1.9\">10. Zebra</li>
-;;        </ul>
-;;      </div>
-;;    </div>"
-
+;; => "<div data-reactroot=\"\" data-reactid=\"1\" data-react-checksum=\"-1712681713\">
+;;       <h2 data-reactid=\"2\">Animals</h2>
+;;       <ul data-reactid=\"3\">
+;;         <li data-reactid=\"4\">1. Ant</li>
+;;         <li data-reactid=\"5\">2. Antelope</li>
+;;         <li data-reactid=\"6\">3. Bird</li>
+;;         <li data-reactid=\"7\">4. Cat</li>
+;;         <li data-reactid=\"8\">5. Dog</li>
+;;         <li data-reactid=\"9\">6. Lion</li>
+;;         <li data-reactid=\"10\">7. Mouse</li>
+;;         <li data-reactid=\"11\">8. Monkey</li>
+;;         <li data-reactid=\"12\">9. Snake</li>
+;;         <li data-reactid=\"13\">10. Zebra</li>
+;;       </ul>
+;;     </div>"
 
 ```
 
