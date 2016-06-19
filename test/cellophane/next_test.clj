@@ -241,6 +241,19 @@
          '[{:tree
             {:tree/foo [{:children {:tree/bar [{:counter [:value]}]}}]}}])))
 
+(deftest test-focus->path
+  (is (= (#'cellophane/focus->path [{:baz/woz [{:bop/wop [:nop/sop]}]}])
+         [:baz/woz :bop/wop]))
+  (is (= (#'cellophane/focus->path [:app/title {:counters/list [:db/id :counter/count]}])
+         []))
+  (is (= (#'cellophane/focus->path [{:todos/list [{[:todo/by-id 0] [:id :title]}]}])
+         [:todos/list [:todo/by-id 0]]))
+  (is (= (#'cellophane/focus->path [{:todos/list [{'[:current-todo _] [:id :title]}]}])
+         [:todos/list '[:current-todo _]]))
+  (is (= (#'cellophane/focus->path [{:people/list [{[:person/by-id 0] [{:person/name [:name/first :name/last]}]}]}])
+         [:people/list [:person/by-id 0] :person/name])))
+
+
 (deftest test-temp-id-equality
   (let [uuid (java.util.UUID/randomUUID)
         id0  (cellophane/tempid uuid)
