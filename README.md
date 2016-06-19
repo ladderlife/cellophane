@@ -31,7 +31,7 @@ Maven dependency information:
 </dependency>
 ```
 
-**Note**: required [Om](https://github.com/omcljs/om) 1.0.0-alpha32 or later.
+**Note**: requires [Om](https://github.com/omcljs/om) 1.0.0-alpha32 or later.
 
 ## Guide
 
