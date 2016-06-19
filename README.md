@@ -154,7 +154,7 @@ A full stack TodoMVC example with server-side rendering can be found in [fullsta
 
 ## Limitations
 
-Because Cellophane's `defui` generates Clojure records (which under the hood are Java classes), `:require`ing other namespaces is not enough to use those components. Using `:import` is also required, as demonstrated below:
+~~Because Cellophane's `defui` generates Clojure records (which under the hood are Java classes), `:require`ing other namespaces is not enough to use those components. Using `:import` is also required, as demonstrated below:~~
 
 ```clojure
 (ns my-ns
@@ -162,6 +162,9 @@ Because Cellophane's `defui` generates Clojure records (which under the hood are
   (:import [other.ns Component]))
 ```
 
+The above is only required until version `0.2.5`. Om components are now generated as plain Clojure functions which can be `:require`d and `:refer`ed by their name.
+
+Because Cellophane component classes are plain Clojure functions which `reify` some protocols, calling `class` on a component *instance* won't return the actual component, but the anonymous class created by Clojure's `reify`. Use `cellophane/react-type` (which is also present in Om Next's public API) to get the actual component class.
 
 ## Copyright & License
 
