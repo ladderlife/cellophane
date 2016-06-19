@@ -1640,8 +1640,11 @@
               (assoc :queued-sends {})
               (assoc :sends-queued false))))
         ((:send config) sends
-          (fn [res query]
-            (merge! this res query)))))))
+         (fn send-cb
+           ([res]
+            (send-cb res nil))
+           ([res query]
+            (merge! this res query))))))))
 
 (defn reconciler
   [{:keys [state shared shared-fn
