@@ -11,7 +11,7 @@
                  [com.datomic/datomic-free "0.9.5372"]
                  [hiccup "1.0.5"]
                  [bidi "2.0.9"]
-                 [com.ladderlife/cellophane "0.3.0"]
+                 [com.ladderlife/cellophane "0.3.1"]
                  [org.omcljs/om "1.0.0-alpha36"]
                  [ring/ring "1.4.0"]
                  [ring/ring-headers "0.2.0"]

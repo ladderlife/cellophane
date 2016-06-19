@@ -27,7 +27,7 @@ Maven dependency information:
 <dependency>
   <groupId>com.ladderlife</groupId>
   <artifactId>cellophane</artifactId>
-  <version>0.3.0</version>
+  <version>0.3.1</version>
 </dependency>
 ```
 
