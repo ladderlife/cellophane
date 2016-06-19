@@ -1,4 +1,4 @@
-(defproject com.ladderlife/cellophane "0.3.1"
+(defproject com.ladderlife/cellophane "0.3.2"
   :description "Server-side rendering for Om Next components"
   :url "http://github.com/ladderlife/cellophane"
   :license {:name "Eclipse Public License"
