@@ -269,11 +269,14 @@
      (apply f (get-state component) arg0 arg1 arg2 arg3 arg-rest))))
 
 (defn get-rendered-state
-  [component]
-  {:pre [(component? component)]}
-  (if (satisfies? ILocalState component)
-    (-get-rendered-state component)
-    (get-state component)))
+  ([component]
+   (get-rendered-state component []))
+  ([component k-or-ks]
+   {:pre [(component? component)]}
+   (let [cst (if (satisfies? ILocalState component)
+               (-get-rendered-state component)
+               (get-state component))]
+     (get-in cst (if (sequential? k-or-ks) k-or-ks [k-or-ks])))))
 
 (defn collect-statics [dt]
   (letfn [(split-on-static [forms]

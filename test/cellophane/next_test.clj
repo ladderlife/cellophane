@@ -91,6 +91,8 @@
       (is (= (cellophane/get-state c) {:foo 1}))
       (is (= (cellophane/get-state c :foo) 1))
       (is (= (cellophane/get-state c [:foo]) 1))
+      (is (= (cellophane/get-rendered-state c :foo) 1))
+      (is (= (cellophane/get-rendered-state c [:foo]) 1))
       (is (= (cellophane/get-state c) (cellophane/get-rendered-state c)))
       (cellophane/set-state! c {:bar 1})
       (is (= (cellophane/get-state c) {:bar 1}))
