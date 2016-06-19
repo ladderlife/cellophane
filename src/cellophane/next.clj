@@ -383,6 +383,11 @@
 (defmacro defui [name & forms]
   (defui* name forms))
 
+(defmacro ui
+  [& forms]
+  (let [t (gensym "ui_")]
+    `(do (defui ~t ~@forms) ~t)))
+
 (defn- munge-component-name [x]
   (let [cl (-> x meta :component-name)
         [ns-name cl-name] (str/split cl #"\.(?=[^.]*$)")]

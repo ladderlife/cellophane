@@ -1,6 +1,6 @@
 (ns cellophane.next-test
   (:require [clojure.test :refer [deftest testing is are]]
-            [cellophane.next :as cellophane :refer [defui]]
+            [cellophane.next :as cellophane :refer [defui ui]]
             [cellophane.dom :as dom]
             [cellophane.protocols :as p]
             [om.next.protocols :as om-p])
@@ -40,7 +40,14 @@
       (is (= (.ident c {}) [:by-id 42])))
     (testing "allow defui not to implement lifecycle render"
       (is (cellophane/component? c))
-      (is (not (cellophane/renderable? c))))))
+      (is (not (cellophane/renderable? c)))))
+  (is (fn? (-> SimpleComponent meta :component)))
+  (testing "`ui` macro"
+    (is (= (cellophane/get-query
+             (ui
+               static cellophane/IQuery
+               (query [this] [:foo])))
+           [:foo]))))
 
 (deftest test-component?-predicate
   (let [simple-c-factory (cellophane/factory SimpleComponent)
