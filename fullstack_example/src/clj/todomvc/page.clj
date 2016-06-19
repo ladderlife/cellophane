@@ -2,12 +2,11 @@
   (:require [cellophane.next :as om]
             [cellophane.dom :as dom]
             [hiccup.page :as hiccup]
-            [todomvc.todomvc :as td])
-  (:import [todomvc.todomvc Todos]))
+            [todomvc.todomvc :as td]))
 
 (defn render-page [{:keys [datomic-connection] :as req}]
   (let [r (td/make-reconciler datomic-connection)
-        c (om/add-root! r Todos nil)
+        c (om/add-root! r td/Todos nil)
         html-string (dom/render-to-str c)]
     (hiccup/html5
       [:head

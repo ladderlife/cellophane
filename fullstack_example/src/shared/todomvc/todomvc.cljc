@@ -49,7 +49,7 @@
 (defui Todos
   static om/IQueryParams
   (params [this]
-    {:todo-item (om/get-query todomvc.item.TodoItem)})
+    {:todo-item (om/get-query item/TodoItem)})
 
   static om/IQuery
   (query [this]

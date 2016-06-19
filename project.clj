@@ -4,9 +4,9 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :repositories [["clojars" {:sign-releases false}]]
-  :dependencies [[org.clojure/clojure "1.8.0" :scope "provided"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha7" :scope "provided"]
 
-                 [org.omcljs/om "1.0.0-alpha34"]]
+                 [org.omcljs/om "1.0.0-alpha36"]]
 
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :source-paths ["src" "test"]
@@ -14,7 +14,7 @@
   :clean-targets ["target"]
   :target-path "target"
 
-  :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.7.228"]
+  :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.9.76"]
                                   [cljsjs/react-dom-server "15.0.1-1"]]}
              :perf {:source-paths ["perf"]
                     :dependencies
