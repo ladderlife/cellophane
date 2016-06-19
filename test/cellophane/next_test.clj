@@ -198,6 +198,26 @@
       #_(is (= (cellophane/subquery c :child-1 SubqueryChild)
              [:foo :bar])))))
 
+(deftest test-focus-query
+  (is (= (cellophane/focus-query [:foo/bar] [])
+         [:foo/bar]))
+  (is (= (cellophane/focus-query
+           [:foo/bar {:baz/woz [:goz/noz]}]
+           [:baz/woz])
+         [{:baz/woz [:goz/noz]}]))
+  (is (= (cellophane/focus-query
+           [:foo/bar :baz/woz]
+           [:baz/woz])
+        [:baz/woz]))
+  (is (= (cellophane/focus-query
+           [:foo/bar {:baz/woz [:goz/noz {:bop/wop [:nop/sop]} :cuz/wuz]}]
+           [:baz/woz :bop/wop])
+        [{:baz/woz [{:bop/wop [:nop/sop]}]}]))
+  (is (= (cellophane/focus-query
+           '[{:tree [:id {:counter [:value]} {:children ...}]}]
+           [:tree :children :counter])
+        [{:tree [{:children [{:counter [:value]}]}]}])))
+
 (deftest test-temp-id-equality
   (let [uuid (java.util.UUID/randomUUID)
         id0  (cellophane/tempid uuid)
