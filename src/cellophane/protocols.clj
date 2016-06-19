@@ -7,7 +7,10 @@
   (-children [this] "returns the element's children"))
 
 (defprotocol IReactComponent
-  (-render [this] "must return a valid ReactDOMElement."))
+  (-render [this] "must return a valid ReactDOMElement.")
+  (-props [this])
+  (-refs [this])
+  (-local-state [this]))
 
 (defprotocol IReactLifecycle
   (shouldComponentUpdate [this next-props next-state])

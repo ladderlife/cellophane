@@ -161,7 +161,9 @@
 
 (extend-type Object
   IQueryParams
-  (params [_]))
+  (params [this]
+    (when-let [ps (-> this meta :params)]
+      (ps this))))
 
 (defprotocol IQuery
   (query [this] "Return the component's unbound query"))
@@ -171,19 +173,6 @@
   (-get-state [this] "Get the component's local state")
   (-get-rendered-state [this] "Get the component's rendered local state")
   (-merge-pending-state! [this] "Get the component's pending local state"))
-
-(defn- class-dispatch
-  "Helper function for implementing static `query` and `params` multimethods.
-   Dispatches on the (component) class"
-  ([class] class)
-  ([class _] class))
-
-(defmulti class-query class-dispatch)
-
-(defmulti class-params class-dispatch)
-(defmethod class-params :default [_])
-
-(defmulti class-ident class-dispatch)
 
 ;; =============================================================================
 ;; React bridging (defui, factory, props, state)
@@ -202,7 +191,7 @@
 
 (defn props [component]
   {:pre [(component? component)]}
-  (-> component :props :cellophaneclj$value))
+  (:cellophaneclj$value (p/-props component)))
 
 (defn computed
   "Add computed properties to props."
@@ -237,7 +226,7 @@
   {:pre [(component? component)]}
   (if (satisfies? ILocalState component)
     (-set-state! component new-state)
-    (reset! (:state component) new-state)))
+    (reset! (p/-local-state component) new-state)))
 
 (defn get-state
   ([component]
@@ -246,7 +235,7 @@
    {:pre [(component? component)]}
    (let [cst (if (satisfies? ILocalState component)
                (-get-state component)
-               @(:state component))]
+               @(p/-local-state component))]
      (get-in cst (if (sequential? k-or-ks) k-or-ks [k-or-ks])))))
 
 (defn react-set-state!
@@ -344,53 +333,58 @@
     (->> dt (map reshape*) vec add-object-protocol add-defaults)))
 
 ;; TODO: probably need to reshape dt to implement defaults
-;; TODO: instead of creating a defrecord that needs to be imported, should we just
-;; define a function?
 (defn defui* [name forms]
   (let [{:keys [dt statics]} (collect-statics forms)
         [other-protocols obj-dt] (split-with (complement '#{Object}) dt)
-        define-class-methods (when-not (empty? (:protocols statics))
-                               `(do
-                                  ~@(->> (partition 2 (:protocols statics))
-                                      (filter (fn [[p _]]
-                                                (some #{(clojure.core/name p)}
-                                                  '#{"IQuery" "Ident" "IQueryParams"})))
-                                      (map
-                                        (fn [[_ impl]]
-                                          (cons 'defmethod
-                                            (cons (symbol (str "cellophane.next/class-" (first impl)))
-                                              (cons name (rest impl)))))))))]
-    `(do
-       (defrecord ~name [~'state ~'refs ~'props children#]
-         ;; TODO: non-lifecycle methods defined in the JS prototype
-         cellophane.protocols/IReactLifecycle
-         ~@(rest (reshape obj-dt reshape-map))
+        class-methods (when-not (empty? (:protocols statics))
+                        (->> (partition 2 (:protocols statics))
+                          (filter (fn [[p _]]
+                                    (some #{(clojure.core/name p)}
+                                      '#{"IQuery" "Ident" "IQueryParams"})))
+                          (reduce
+                            (fn [r [_ impl]]
+                              (assoc r (keyword (first impl))
+                                (cons 'fn (rest impl)))) {:params '(fn [this])})))]
+    `(let [c# (fn ~name [state# refs# props# children#]
+                ;; TODO: non-lifecycle methods defined in the JS prototype
+                (reify
+                  cellophane.protocols/IReactLifecycle
+                  ~@(rest (reshape obj-dt reshape-map))
 
-         ~@other-protocols
+                  ~@other-protocols
 
-         ~@(:protocols statics)
+                  ~@(:protocols statics)
 
-         cellophane.protocols/IReactChildren
-         (~'-children [this#]
-          children#)
+                  cellophane.protocols/IReactChildren
+                  (~'-children [this#]
+                   children#)
 
-         cellophane.protocols/IReactComponent
-         (~'-render [this#]
-          (when-not @(:cellophaneclj$mounted? ~'props)
-            (swap! (:cellophaneclj$mounted? ~'props) not))
-          (p/componentWillMount this#)
-          ;(p/render this#)
-          ;; simulate re-render
-          ;; TODO: use the actual `reconcile!` implementation, or actually re-render somehow
-          (p/render this#)))
-
-       ~define-class-methods)))
+                  cellophane.protocols/IReactComponent
+                  (~'-render [this#]
+                   (when-not @(:cellophaneclj$mounted? props#)
+                     (swap! (:cellophaneclj$mounted? props#) not))
+                   (p/componentWillMount this#)
+                   ;(p/render this#)
+                   ;(p/componentDidMount this#)
+                   ;; simulate re-render
+                   ;; TODO: use the actual `reconcile!` implementation, or actually re-render somehow
+                   (p/render this#))
+                  (~'-props [this]
+                   props#)
+                  (~'-local-state [this]
+                   state#)
+                  (~'-refs [this]
+                   refs#)))]
+       (def ~name
+         (with-meta c# (merge {:component c#
+                               :component-name (str (ns-name *ns*) "$" ~(str name))}
+                         ~class-methods))))))
 
 (defmacro defui [name & forms]
   (defui* name forms))
 
 (defn- munge-component-name [x]
-  (let [cl (reflect/typename (cond-> x (component? x) class))
+  (let [cl (-> x meta :component-name)
         [ns-name cl-name] (str/split cl #"\.(?=[^.]*$)")]
     (munge
       (str (str/replace (str ns-name) "." "$") "$" cl-name))))
@@ -406,7 +400,7 @@
    (factory class nil))
   ;; TODO: support validator
   ([class {:keys [validator keyfn] :as opts}]
-   {:pre [(class? class)]}
+   {:pre [(fn? class)]}
    (fn self
      ([] (self nil))
      ([props & children]
@@ -414,9 +408,7 @@
                         (some? keyfn) (keyfn props)
                         (some? (:react-key props)) (:react-key props)
                         :else (compute-react-key class props))
-            ctor (.getConstructor class
-                   (into-array java.lang.Class
-                     (take 4 (repeat java.lang.Object))))
+            ctor class
             ref (:ref props)
             props {:cellophaneclj$reactRef   ref
                    :cellophaneclj$reactKey   react-key
@@ -429,21 +421,19 @@
                    :cellophaneclj$shared     *shared*
                    :cellophaneclj$instrument *instrument*
                    :cellophaneclj$depth      *depth*}
-            component (.newInstance ctor
-                                    ;;   state      refs
-                        (object-array [(atom nil) (atom nil) props children]))
+            component (ctor (atom nil) (atom nil) props children)
             init-state (try
                          (.initLocalState component)
                          (catch AbstractMethodError _))]
         (when ref
           (assert (some? *parent*))
-          (swap! (:refs *parent*) assoc ref component))
+          (swap! (p/-refs *parent*) assoc ref component))
         (when init-state
-          (reset! (:state component) init-state))
+          (reset! (p/-local-state component) init-state))
         component)))))
 
 (defn- get-prop [c prop]
-  (-> c :props prop))
+  (get (p/-props c) prop))
 
 (defn- mounted? [c]
   {:pre [(component? c)]}
@@ -473,11 +463,13 @@
 
 (defn react-type [component]
   {:pre [(component? component)]}
-  (type component))
+  (let [[ns _ c] (str/split (reflect/typename (type component)) #"\$")
+        ns (clojure.main/demunge ns)]
+    @(find-var (symbol ns c))))
 
 (defn react-ref [component name]
   {:pre [(component? component)]}
-  (some-> @(:refs component) (get name)))
+  (some-> @(p/-refs component) (get name)))
 
 (defn- path
   "Returns the component's Om data path."
@@ -504,10 +496,10 @@
 (defn class-path [c]
   "Return the component class path associated with a component."
   {:pre [(component? c)]}
-  (loop [c c ret (list (type c))]
+  (loop [c c ret (list (react-type c))]
     (if-let [p (parent c)]
       (if (iquery? p)
-        (recur p (cons (type p) ret))
+        (recur p (cons (react-type p) ret))
         (recur p ret))
       (let [seen (atom #{})]
         (take-while
@@ -521,8 +513,10 @@
 ;; Query implementations
 
 (defn iquery? [x]
-  (let [class (cond-> x (component? x) class)]
-    (extends? IQuery class)))
+  (if (fn? x)
+    (some? (-> x meta :query))
+    (let [class (cond-> x (component? x) class)]
+      (extends? IQuery class))))
 
 (defn- var? [x]
   (and (symbol? x)
@@ -571,7 +565,7 @@
        (str "Query violation, " component " reuses " c' " query"))
      (with-meta
        (bind-query q (:params query-data (params component)))
-       {:component (type component)}))))
+       {:component (react-type component)}))))
 
 (defn- get-class-or-instance-query
   "Return a IQuery/IParams local bound query. Works for component classes
@@ -579,10 +573,10 @@
   [x]
   (if (component? x)
     (get-component-query x)
-    (let [q (class-query x)
+    (let [q ((-> x meta :query) x)
           c (-> q meta :component)]
       (assert (nil? c) (str "Query violation, " x , " reuses " c " query"))
-      (with-meta (bind-query q (class-params x)) {:component x}))))
+      (with-meta (bind-query q ((-> x meta :params) x)) {:component x}))))
 
 (declare get-indexer)
 
@@ -626,7 +620,7 @@
    component is mounted subquery-ref will be used, subquery-class otherwise."
   [x subquery-ref subquery-class]
   {:pre [(or (keyword? subquery-ref) (string? subquery-ref))
-         (class? subquery-class)]}
+         (fn? subquery-class)]}
   (if (and (component? x) (mounted? x))
     (get-query (react-ref x subquery-ref))
     (get-query subquery-class)))
@@ -766,7 +760,7 @@
   ([reconciler root-class target]
    (add-root! reconciler root-class target nil))
   ([reconciler root-class target options]
-   {:pre [(reconciler? reconciler) (class? root-class)]}
+   {:pre [(reconciler? reconciler) (fn? root-class)]}
    (om-p/add-root! reconciler root-class target options)))
 
 (defn remove-root!
@@ -931,7 +925,7 @@
     (let [prop->classes     (atom {})
           class-path->query (atom {})
           rootq             (get-query x)
-          class             (cond-> x (component? x) type)]
+          class             (cond-> x (component? x) react-type)]
       (letfn [(get-dispatch-key [prop]
                 (cond-> prop
                   (or (not (util/ident? prop))
@@ -975,7 +969,7 @@
                                 cs (get dp->cs rendered-path')
                                 cascade-query? (and (= (count cs) 1)
                                                  (= (-> query' meta :component)
-                                                   (type (first cs)))
+                                                   (react-type (first cs)))
                                                  (not (map? query')))
                                 query''        (if cascade-query?
                                                  (get-query (first cs))
@@ -996,7 +990,7 @@
                       (doseq [[prop query'] query]
                         (let [path'          (conj path prop)
                               class'         (-> query' meta :component)
-                              cs             (filter #(= class' (type %))
+                              cs             (filter #(= class' (react-type %))
                                                (get dp->cs path))
                               cascade-query? (and class' (= (count cs) 1))
                               query''        (if cascade-query?
@@ -1033,7 +1027,7 @@
     (swap! indexes
       (fn [indexes]
         (let [indexes (update-in ((:index-component extfs) indexes c)
-                        [:class->components (type c)]
+                        [:class->components (react-type c)]
                         (fnil conj #{}) c)
               data-path (into [] (remove number?) (path c))
               indexes (update-in ((:index-component extfs) indexes c)
@@ -1050,7 +1044,7 @@
     (swap! indexes
       (fn [indexes]
         (let [indexes (update-in ((:drop-component extfs) indexes c)
-                        [:class->components (type c)]
+                        [:class->components (react-type c)]
                         disj c)
               data-path (into [] (remove number?) (path c))
               indexes (update-in ((:drop-component extfs) indexes c)
@@ -1166,8 +1160,8 @@
     ;; union case
     (map? query)
     (let [class (-> query meta :component)
-          ident   (when (extends? Ident class)
-                    (class-ident class data))]
+          ident   (when-let [ident (-> class meta :ident)]
+                    (ident class data))]
       (if-not (nil? ident)
         (vary-meta (normalize* (get query (first ident)) data refs union-seen)
           assoc :om/tag (first ident))
@@ -1196,8 +1190,8 @@
                 ;; normalize one
                 (map? v)
                 (let [x (normalize* sel v refs union-entry)]
-                  (if-not (or (nil? class) (not (extends? Ident class)))
-                    (let [i (class-ident class v)]
+                  (if-not (or (nil? class) (not (-> class meta :ident)))
+                    (let [i ((-> class meta :ident) class v)]
                       (swap! refs update-in [(first i) (second i)] merge x)
                       (recur (next q) (assoc ret k i)))
                     (recur (next q) (assoc ret k x))))
@@ -1205,8 +1199,8 @@
                 ;; normalize many
                 (vector? v)
                 (let [xs (into [] (map #(normalize* sel % refs union-entry)) v)]
-                  (if-not (or (nil? class) (not (extends? Ident class)))
-                    (let [is (into [] (map #(class-ident class %)) xs)]
+                  (if-not (or (nil? class) (not (-> class meta :ident)))
+                    (let [is (into [] (map #((-> class meta :ident) class %)) xs)]
                       (if (vector? sel)
                         (when-not (empty? is)
                           (swap! refs update-in [(ffirst is)]

@@ -13,6 +13,11 @@
 
 (def simple-component-factory (cellophane/factory SimpleComponent))
 
+(deftest test-get-prop
+  (is (= (#'cellophane/get-prop (simple-component-factory) :cellophaneclj$depth) 0))
+  (binding [cellophane/*shared* :fake]
+    (is (= (#'cellophane/get-prop (simple-component-factory) :cellophaneclj$shared) :fake))))
+
 (defui ComponentWithStatics
   static cellophane/Ident
   (ident [this props]
@@ -24,12 +29,12 @@
 (deftest test-defui
   (testing "defui definition works"
     (is SimpleComponent)
-    (is (class? SimpleComponent)))
+    (is (fn? SimpleComponent)))
   (testing "defui implements Lifecycle protocols"
-    (let [c (->SimpleComponent nil nil nil nil)]
+    (let [c (SimpleComponent nil nil nil nil)]
       (is (cellophane/component? c))
       (is (= (.initLocalState c) {:foo 1}))))
-  (let [c (->ComponentWithStatics nil nil nil nil)]
+  (let [c (ComponentWithStatics nil nil nil nil)]
     (testing "defui implements statics"
       (is (= (.query c) [:foo]))
       (is (= (.ident c {}) [:by-id 42])))
@@ -94,10 +99,12 @@
                                     :parser (cellophane/parser {:read react-keys-read})})
           rks-c (cellophane/add-root! r ReactKeysParent nil)]
       (is (= (cellophane/react-key c) "foo"))
-      (is (= (-> (p/-render rks-c)
-               :children first :react-key) "cellophane$next_test$ReactKeysChild_[:children 0]"))))
+      (is (= (-> (p/-render rks-c) :children first :react-key)
+             "cellophane$next_test$ReactKeysChild_[:children 0]"))))
   (testing "react type"
     (let [c (simple-component-factory)]
+      (is (thrown? AssertionError (cellophane/react-type 42)))
+      (is (thrown? AssertionError (cellophane/react-type nil)))
       (is (= (cellophane/react-type c) SimpleComponent)))))
 
 (deftest test-computed-props
@@ -167,6 +174,9 @@
              [:foo :bar]))
       (is (= (cellophane/get-unbound-query cqps)
              '[:foo (:bar {:a ?a})]))
+      (is (= (cellophane/params ComponentWithQPs)
+             {:a 1}))
+      (is (nil? (cellophane/params SimpleComponent)))
       (is (= (cellophane/get-params cqps)
              {:a 1}))))
   (testing "subquery"
@@ -409,7 +419,7 @@
         idxr (get-in r [:config :indexer])
         ;; simulate mounting
         _ (om-p/add-root! r RootComponent nil nil)
-        _ (om-p/index-component! idxr (->RootComponent nil nil #js {:cellophaneclj$reconciler r} nil))
+        _ (om-p/index-component! idxr (RootComponent nil nil #js {:cellophaneclj$reconciler r} nil))
         indexes @(:indexes idxr)
         classes (-> indexes :class->components keys)
         cps (-> indexes :class-path->query keys)

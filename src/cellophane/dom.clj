@@ -298,7 +298,7 @@
                                                  element
                                                  (react-empty-node))]
                                   (assoc rendered :react-key
-                                    (some-> (:props c) :cellophaneclj$reactKey)))
+                                    (some-> (p/-props c) :cellophaneclj$reactKey)))
 
                                 (or (string? c) (number? c))
                                 (let [c (cond-> c (number? c) str)]
@@ -498,4 +498,4 @@
    (p/-render component))
   ([component name]
    {:pre [(satisfies? p/IReactComponent component)]}
-   (some-> @(:refs component) (get name) p/-render)))
+   (some-> @(p/-refs component) (get name) p/-render)))

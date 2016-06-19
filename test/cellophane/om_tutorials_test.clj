@@ -74,7 +74,7 @@
     (testing "render with reconciler & add-root!"
       (let [c (cellophane/add-root! animals-reconciler AnimalsList nil)
             markup-str (str (#'dom/render-to-str* c))]
-        (is (= (class (cellophane/app-root animals-reconciler)) AnimalsList))
+        (is (= (cellophane/react-type (cellophane/app-root animals-reconciler)) AnimalsList))
         (is (= markup-str result-markup))))))
 
 ;; =============================================================================
