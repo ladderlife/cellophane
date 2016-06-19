@@ -407,8 +407,6 @@
     {:a 1})
   (componentWillMount [this]
     (cellophane/update-state! this update-in [:a] inc))
-  (componentDidMount [this]
-    (cellophane/update-state! this update-in [:a] * 10))
   (render [this]
     (dom/div nil (str "a: " (cellophane/get-state this :a)))))
 
@@ -417,8 +415,6 @@
   (initLocalState [this]
     {:a 1})
   (componentWillMount [this]
-    (cellophane/update-state! this update-in [:a] inc))
-  (componentDidMount [this]
     (cellophane/update-state! this update-in [:a] inc))
   (render [this]
     (dom/div nil (str "child a: " (cellophane/get-state this :a)))))
@@ -430,8 +426,6 @@
   (initLocalState [this]
     {:a 2})
   (componentWillMount [this]
-    (cellophane/update-state! this update-in [:a] inc))
-  (componentDidMount [this]
     (cellophane/update-state! this update-in [:a] inc))
   (render [this]
     (dom/div nil
@@ -445,11 +439,11 @@
     (is (= (str (#'dom/render-to-str* c1))
            "<div data-reactroot=\"\" data-reactid=\"1\">a: 2</div>"))
     (is (= (str (#'dom/render-to-str* c2))
-           "<div data-reactroot=\"\" data-reactid=\"1\">a: 20</div>"))
+           "<div data-reactroot=\"\" data-reactid=\"1\">a: 2</div>"))
     (is (= (str (#'dom/render-to-str* c3))
            (remove-whitespace "<div data-reactroot=\"\" data-reactid=\"1\">
-                                 <div data-reactid=\"2\">child a: 3</div>
-                                 <!-- react-text: 3 -->parent a: 4<!-- /react-text -->
+                                 <div data-reactid=\"2\">child a: 2</div>
+                                 <!-- react-text: 3 -->parent a: 3<!-- /react-text -->
                                </div>")))))
 
 (defui SomeChild

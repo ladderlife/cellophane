@@ -380,7 +380,6 @@
             (swap! (:cellophaneclj$mounted? ~'props) not))
           (p/componentWillMount this#)
           ;(p/render this#)
-          (p/componentDidMount this#)
           ;; simulate re-render
           ;; TODO: use the actual `reconcile!` implementation, or actually re-render somehow
           (p/render this#)))
