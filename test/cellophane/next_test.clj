@@ -253,7 +253,6 @@
   (is (= (#'cellophane/focus->path [{:people/list [{[:person/by-id 0] [{:person/name [:name/first :name/last]}]}]}])
          [:people/list [:person/by-id 0] :person/name])))
 
-
 (deftest test-temp-id-equality
   (let [uuid (java.util.UUID/randomUUID)
         id0  (cellophane/tempid uuid)
@@ -551,6 +550,26 @@
     (is (= {:name "Susan" :points 5 :friend [:person/by-name "Mary"]}
            p0))
     (is (= refs {:person/by-name {"Mary" {:name "Mary"}}}))))
+
+(deftest test-db->tree-ident-chain
+  (testing "simple joins"
+    (let [data {:a [:b 1]
+                :b {1 [:c 2]}
+                :c {2 {:foo "bar"}}}
+          query [{:a [:foo]}]]
+      (is (= (cellophane/db->tree query data data)
+            {:a {:foo "bar"}}))))
+  (testing "simple unions"
+    (let [data {:a [:b 1]
+                :b {1 [:c 2]}
+                :c {2 {:foo "foo" :bar "bar"}}}]
+      (is (= (cellophane/db->tree [{:a {:b [:x] :c [:foo]}}] data data)
+             {:a {:foo "foo"}}))))
+  (testing "unions with idents in queries"
+    (let [data {:y {"bla" [:z "meh"]}
+                :z {"meh" {:name "Bar" :age 25}}}]
+      (is (= (cellophane/db->tree [{[:y "bla"] {:z [:name]}}] data data)
+             {[:y "bla"] {:name "Bar"}})))))
 
 ;; Remote test
 
