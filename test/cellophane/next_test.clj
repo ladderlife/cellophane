@@ -681,3 +681,36 @@
                            (apply factory props children))})]
     (dom/render-to-str (cellophane/add-root! r InstrumentRoot nil))
     (is (= @cnt 2))))
+
+(defmulti transact-read cellophane/dispatch)
+(defmulti transact-mutate cellophane/dispatch)
+
+(defmethod transact-read :app/count
+  [{:keys [state]} k _]
+  {:value (get @state k)})
+
+(defmethod transact-mutate 'this/throws
+  [_ _ _]
+  {:action #(throw (Exception.))})
+
+(defmethod transact-mutate 'app/inc!
+  [{:keys [state]} _ _]
+  {:action #(swap! state update-in [:app/count] inc)})
+
+(deftest test-transact!
+  (let [r (cellophane/reconciler {:state (atom {:app/count 0})
+                          :parser (cellophane/parser {:read transact-read
+                                                      :mutate transact-mutate})})
+        t-ret (cellophane/transact! r '[(app/inc!)])
+        t-err (cellophane/transact! r '[(this/throws)])]
+    (is (= (:app/count @r) 1))
+    (is (some? t-ret))
+    (is (= t-ret {'app/inc! {:result {:app/count 1}}}))
+    (is (= (cellophane/transact! r '[(app/inc!) :app/count])
+          {'app/inc! {:result {:app/count 2}}
+           :app/count 2}))
+    (is (some? t-err))
+    (is (contains? t-err 'this/throws))
+    (is (contains? (get t-err 'this/throws) :om.next/error))
+    (is (not (contains? (get t-err 'this/throws) :result)))
+    (is (= (get (cellophane/transact! r '[(this/throws) :app/count]) :app/count) 2))))
