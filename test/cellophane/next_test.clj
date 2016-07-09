@@ -116,6 +116,10 @@
       (is (thrown? AssertionError (cellophane/react-type nil)))
       (is (= (cellophane/react-type c) SimpleComponent)))))
 
+(deftest test-factory-validator
+  (let [f (cellophane/factory SimpleComponent {:validator (fn [props] (some? props))})]
+    (is (thrown? AssertionError (f nil)))))
+
 (deftest test-computed-props
   (is (= (cellophane/get-computed (cellophane/computed {} {:a 1}))
          {:a 1}))

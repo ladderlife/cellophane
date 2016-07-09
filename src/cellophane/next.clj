@@ -418,13 +418,14 @@
 (defn factory
   ([class]
    (factory class nil))
-  ;; TODO: support validator
   ([class {:keys [validator keyfn instrument?]
            :or {instrument? true} :as opts}]
    {:pre [(fn? class)]}
    (fn self
      ([] (self nil))
      ([props & children]
+      (when-not (nil? validator)
+        (assert (validator props)))
       (if (and *instrument* instrument?)
         (*instrument*
           {:props    props
