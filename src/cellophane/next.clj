@@ -419,38 +419,45 @@
   ([class]
    (factory class nil))
   ;; TODO: support validator
-  ([class {:keys [validator keyfn] :as opts}]
+  ([class {:keys [validator keyfn instrument?]
+           :or {instrument? true} :as opts}]
    {:pre [(fn? class)]}
    (fn self
      ([] (self nil))
      ([props & children]
-      (let [react-key (cond
-                        (some? keyfn) (keyfn props)
-                        (some? (:react-key props)) (:react-key props)
-                        :else (compute-react-key class props))
-            ctor class
-            ref (:ref props)
-            props {:cellophaneclj$reactRef   ref
-                   :cellophaneclj$reactKey   react-key
-                   :cellophaneclj$value      (cond-> props
-                                               (map? props) (dissoc :ref))
-                   :cellophaneclj$mounted?   (atom false)
-                   :cellophaneclj$path       (-> props meta :om-path)
-                   :cellophaneclj$reconciler *reconciler*
-                   :cellophaneclj$parent     *parent*
-                   :cellophaneclj$shared     *shared*
-                   :cellophaneclj$instrument *instrument*
-                   :cellophaneclj$depth      *depth*}
-            component (ctor (atom nil) (atom nil) props children)
-            init-state (try
-                         (.initLocalState component)
-                         (catch AbstractMethodError _))]
-        (when ref
-          (assert (some? *parent*))
-          (swap! (p/-refs *parent*) assoc ref component))
-        (when init-state
-          (reset! (p/-local-state component) init-state))
-        component)))))
+      (if (and *instrument* instrument?)
+        (*instrument*
+          {:props    props
+           :children children
+           :class    class
+           :factory  (factory class (assoc opts :instrument? false))})
+        (let [react-key (cond
+                          (some? keyfn) (keyfn props)
+                          (some? (:react-key props)) (:react-key props)
+                          :else (compute-react-key class props))
+              ctor class
+              ref (:ref props)
+              props {:cellophaneclj$reactRef   ref
+                     :cellophaneclj$reactKey   react-key
+                     :cellophaneclj$value      (cond-> props
+                                                 (map? props) (dissoc :ref))
+                     :cellophaneclj$mounted?   (atom false)
+                     :cellophaneclj$path       (-> props meta :om-path)
+                     :cellophaneclj$reconciler *reconciler*
+                     :cellophaneclj$parent     *parent*
+                     :cellophaneclj$shared     *shared*
+                     :cellophaneclj$instrument *instrument*
+                     :cellophaneclj$depth      *depth*}
+              component (ctor (atom nil) (atom nil) props children)
+              init-state (try
+                           (.initLocalState component)
+                           (catch AbstractMethodError _))]
+          (when ref
+            (assert (some? *parent*))
+            (swap! (p/-refs *parent*) assoc ref component))
+          (when init-state
+            (reset! (p/-local-state component) init-state))
+          component))))))
 
 (defn- get-prop [c prop]
   (get (p/-props c) prop))
@@ -1705,11 +1712,7 @@
                   :pathopt pathopt
                   :migrate migrate
                   :id-key id-key
-                  :instrument (cond-> instrument
-                                (not (nil? instrument))
-                                (fn [x]
-                                  (binding [*instrument* nil]
-                                    (instrument x))))}
+                  :instrument instrument}
                  (atom {:queue [] :queued false :queued-sends {}
                         :sends-queued false
                         :target nil :root nil :render nil :remove nil

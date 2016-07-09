@@ -654,3 +654,26 @@
       (cellophane/get-query MigratePeople))
     (is (not (cellophane/tempid? (-> @r :person/by-id ffirst))))
     (is (= (-> @r :person/by-id ffirst) 42))))
+
+(defui InstrumentChild
+  Object
+  (render [this]
+    (dom/p nil "I'm a child")))
+
+(def instrument-child (cellophane/factory InstrumentChild {:instrument? true}))
+
+(defui InstrumentRoot
+  Object
+  (render [this]
+    (dom/div nil
+      (instrument-child))))
+
+(deftest test-instrument
+  (let [cnt (atom 0)
+        r (cellophane/reconciler
+            {:state (atom {:root 1})
+             :instrument (fn [{:keys [class props children factory]}]
+                           (swap! cnt inc)
+                           (apply factory props children))})]
+    (dom/render-to-str (cellophane/add-root! r InstrumentRoot nil))
+    (is (= @cnt 2))))
