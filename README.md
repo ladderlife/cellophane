@@ -11,6 +11,9 @@ Server-side rendering for Om Next components
     - [Simple case (no reconciler)](#simple-case-no-reconciler)
     - [Full-blown case](#full-blown-case)
 - [Limitations](#limitations)
+  - [Requiring Cellophane components](#requiring-cellophane-components)
+  - [Getting a component instance's class / type](#getting-a-component-instances-class--type)
+  - [Custom functions under the special `Object` protocol](#custom-functions-under-the-special-object-protocol)
 - [Copyright & License](#copyright--license)
 
 
@@ -156,6 +159,8 @@ A full stack TodoMVC example with server-side rendering can be found in [fullsta
 
 ## Limitations
 
+### Requiring Cellophane components
+
 ~~Because Cellophane's `defui` generates Clojure records (which under the hood are Java classes), `:require`ing other namespaces is not enough to use those components. Using `:import` is also required, as demonstrated below:~~
 
 ```clojure
@@ -164,9 +169,23 @@ A full stack TodoMVC example with server-side rendering can be found in [fullsta
   (:import [other.ns Component]))
 ```
 
-The above is only required until version `0.2.5`. Om components are now generated as plain Clojure functions which can be `:require`d and `:refer`ed by their name.
+This is only required until version `0.2.5`. Om Next components are now generated as plain Clojure functions which can be `:require`d and `:refer`ed by their name.
+
+### Getting a component instance's class / type
 
 Because Cellophane component classes are plain Clojure functions which `reify` some protocols, calling `class` on a component *instance* won't return the actual component, but the anonymous class created by Clojure's `reify`. Use `cellophane/react-type` (which is also present in Om Next's public API) to get the actual component class.
+
+### Custom functions under the special `Object` protocol
+
+Because JavaScript environments support adding arbitrary methods to an object's prototype, it's possible in ClojureScript to define methods not in protocols under the special `Object` protocol. This is, however, not possible in JVM Clojure. As such, Cellophane only supports [React's lifecycle methods](https://facebook.github.io/react/docs/component-specs.html#lifecycle-methods)  defined under the `Object` protocol.
+
+``` clojure
+;; this is only supported in ClojureScript
+(defui MyComponent
+  Object
+  (some-function [this]
+    42))
+```
 
 ## Copyright & License
 
