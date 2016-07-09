@@ -602,3 +602,36 @@
     (is (some? c))
     (is (not (empty? @remote-reconciler)))))
 
+(defui MigratePerson
+  static cellophane/Ident
+  (ident [this {:keys [db/id]}]
+    [:person/by-id id])
+  static cellophane/IQuery
+  (query [this]
+    [:db/id :person/name]))
+
+(defui MigratePeople
+  static cellophane/IQuery
+  (query [this]
+    [{:people (cellophane/get-query MigratePerson)}]))
+
+(defn migrate-read
+  [{:keys [state query]} k _]
+  (let [st @state]
+    {:value (cellophane/db->tree query (get st k) st)}))
+
+(deftest test-migrate
+  (let [tmpid (cellophane/tempid (java.util.UUID/randomUUID))
+        r (cellophane/reconciler {:state (atom {:people [[:person/by-id tmpid]]
+                                                :person/by-id  {tmpid {:db/id tmpid
+                                                                       :person/name "Joe"}}})
+                                  :normalize true
+                                  :id-key :db/id
+                                  :parser (cellophane/parser {:read migrate-read})})]
+    (cellophane/add-root! r MigratePeople nil)
+    (is (cellophane/tempid? (-> @r :person/by-id ffirst)))
+    (cellophane/merge! r
+      {'some/action! {:tempids {[:person/by-id tmpid] [:person/by-id 42]}}}
+      (cellophane/get-query MigratePeople))
+    (is (not (cellophane/tempid? (-> @r :person/by-id ffirst))))
+    (is (= (-> @r :person/by-id ffirst) 42))))

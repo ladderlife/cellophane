@@ -1694,7 +1694,7 @@
                   :root-render root-render :root-unmount root-unmount
                   ;; :logger logger
                   :pathopt pathopt
-                  ;; :migrate migrate
+                  :migrate migrate
                   :id-key id-key
                   :instrument (cond-> instrument
                                 (not (nil? instrument))
