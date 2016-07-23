@@ -184,7 +184,7 @@
 
 (def lower-case-attrs
   #{"accessKey" "allowFullScreen" "allowTransparency" "autoComplete"
-    "autoFocus" "autoPlay" "contentEditable" "contextMenu" "crossOrigin" 
+    "autoFocus" "autoPlay" "contentEditable" "contextMenu" "crossOrigin"
     "cellPadding" "cellSpacing" "charSet" "classID" "colSpan" "dateTime"
     "encType" "formAction" "formEncType" "formMethod" "formNoValidate"
     "formTarget" "frameBorder" "hrefLang" "inputMode" "keyParams"
@@ -402,7 +402,8 @@
     (= key :style)
     (render-styles! sb value)
     ;; TODO: not sure if we want to limit values to strings/numbers
-    (and (contains? supported-attrs (name key))
+    (and (or (contains? supported-attrs (name key))
+             (.startsWith (name key) "data-"))
          (or (string? value) (number? value)))
     (render-xml-attribute! sb key value)
 
