@@ -413,20 +413,18 @@
     :else nil))
 
 ;; some props assigned first in input and option. see:
-;; https://github.com/facebook/react/blob/1573b/src/renderers/dom/client/wrappers/ReactDOMOption.js#L60
-;; https://github.com/facebook/react/blob/1573b/src/renderers/dom/client/wrappers/ReactDOMInput.js#L71
+;; https://github.com/facebook/react/blob/08a08/src/renderers/dom/client/wrappers/ReactDOMOption.js#L108
+;; https://github.com/facebook/react/blob/08a08/src/renderers/dom/client/wrappers/ReactDOMInput.js#L58
 (defn render-attr-map! [sb tag attrs]
-  (let [attrs (cond->> attrs
-                (= tag "input") (sort-by (fn [[k _]]
-                                           (if (= k :type)
-                                             -10000
-                                             0)))
-
-                (= tag "option") (sort-by (fn [[k _]]
-                                            (if (= k :selected)
-                                             -10000
-                                             0))))]
-    (run! (partial render-attribute! sb) attrs)))
+  (letfn [(sorter [order]
+            (fn [[k _]]
+              (get order k (->> (vals order)
+                             (apply max)
+                             inc))))]
+    (let [attrs (cond->> attrs
+                  (= tag "input") (sort-by (sorter {:type 0 :step 1}))
+                  (= tag "option") (sort-by (sorter {:selected 0})))]
+      (run! (partial render-attribute! sb) attrs))))
 
 (def ^{:doc "A list of elements that must be rendered without a closing tag."
        :private true}

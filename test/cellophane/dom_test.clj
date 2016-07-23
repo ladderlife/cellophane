@@ -500,4 +500,9 @@
   (is (= (str (#'dom/render-to-str* (dom/input #js {:value "foo" :id "bar" :type "text"})))
          "<input type=\"text\" value=\"foo\" id=\"bar\" data-reactroot=\"\" data-reactid=\"1\"/>"))
   (is (= (str (#'dom/render-to-str* (dom/option #js {:disabled "" :label "foo" :selected ""})))
-         "<option selected=\"\" disabled=\"\" label=\"foo\" data-reactroot=\"\" data-reactid=\"1\"></option>")))
+         "<option selected=\"\" disabled=\"\" label=\"foo\" data-reactroot=\"\" data-reactid=\"1\"></option>"))
+  ;; https://github.com/facebook/react/commit/fc0431
+  (is (= (str (#'dom/render-to-str* (dom/input #js {:value "foo" :step 3 :name "points" :type "number"})))
+         "<input type=\"number\" step=\"3\" value=\"foo\" name=\"points\" data-reactroot=\"\" data-reactid=\"1\"/>"))
+  (is (= (str (#'dom/render-to-str* (dom/input #js {:value "foo" :type "number" :name "points" :step 3})))
+         "<input type=\"number\" step=\"3\" value=\"foo\" name=\"points\" data-reactroot=\"\" data-reactid=\"1\"/>")))
