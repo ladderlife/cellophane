@@ -717,6 +717,30 @@
 
 ;; Bugs
 
+(deftest test-om-604
+  (let [data {:items [[:by-id 1]]
+              :by-id {1 {:id 1
+                         :stuff [{:name "something"}]}}}]
+    (is (= (cellophane/db->tree [{:items [:id {:stuff [:name]}]}] data data)
+           {:items [{:id 1, :stuff [{:name "something"}]}]})))
+  (let [data {:todos/list [{:id 42
+                            :author {:first-name "John"
+                                     :last-name "Smith"}
+                            :states [:done :archived]}
+                           {:id 43
+                            :author {:first-name "Mary"
+                                     :last-name "Brown"}
+                            :states [:done :archived]}]}]
+    (is (= (cellophane/db->tree [{:todos/list [:id {:author [:first-name]}]}] data data)
+           {:todos/list [{:id 42 :author {:first-name "John"}}
+                         {:id 43 :author {:first-name "Mary"}}]})))
+  (let [data {:items [[:by-id 1]]
+              :by-id {1 {:id 1
+                         :stuff [{:name {:first "John" :last "Smith"}}]}}}]
+    (is (= (cellophane/db->tree [{:items [:id {:stuff [{:name [:first]}]}]}] data data)
+          {:items [{:id 1, :stuff [{:name {:first "John"}}]}]}))
+    (is (= (cellophane/db->tree [{:items [:id {:stuff ['({:name [:first]} {:param 1})]}]}] data data)
+          {:items [{:id 1, :stuff [{:name {:first "John"}}]}]}))))
 
 (deftest test-om-637
   (let [data {:some/list [[:item/by-id 1]]
