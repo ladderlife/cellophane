@@ -1329,6 +1329,10 @@
     (map (fn [[k q]] [k (reduce-query-depth q recursion-key)]))
     (into {})))
 
+(defn- mappable-ident? [refs ident]
+  (and (util/ident? ident)
+       (contains? refs (first ident))))
+
 ;; TODO: easy to optimize
 
 (defn- denormalize*
@@ -1342,23 +1346,27 @@
   {:pre [(map? refs)]}
   ;; support taking ident for data param
   (let [data (loop [data data]
-               (if (util/ident? data)
+               (if (mappable-ident? refs data)
                  (recur (get-in refs (map-ident data)))
                  data))]
     (if (vector? data)
       ;; join
       (let [step (fn [ident]
-                   (let [ident'       (get-in refs (map-ident ident))
-                         union-recur? (and union-expr recurse-key)
-                         query        (cond-> query
-                                        union-recur? (reduce-union-recursion-depth recurse-key))
-                         ;; also reduce query depth of union-seen, there can
-                         ;; be more union recursions inside
-                         union-seen'  (cond-> union-expr
-                                        union-recur? (reduce-union-recursion-depth recurse-key))
-                         query'       (cond-> query
-                                        (map? query) (get (first ident)))] ;; UNION
-                     (denormalize* query' ident' refs map-ident idents-seen union-seen' nil)))]
+                   (if-not (mappable-ident? refs ident)
+                     (if (= query '[*])
+                       ident
+                       (select-keys ident query))
+                     (let [ident'       (get-in refs (map-ident ident))
+                           union-recur? (and union-expr recurse-key)
+                           query        (cond-> query
+                                          union-recur? (reduce-union-recursion-depth recurse-key))
+                           ;; also reduce query depth of union-seen, there can
+                           ;; be more union recursions inside
+                           union-seen'  (cond-> union-expr
+                                          union-recur? (reduce-union-recursion-depth recurse-key))
+                           query'       (cond-> query
+                                          (map? query) (get (first ident)))] ;; UNION
+                       (denormalize* query' ident' refs map-ident idents-seen union-seen' nil))))]
         (into [] (map step) data))
       ;; map case
       (if (= '[*] query)
@@ -1374,7 +1382,8 @@
               (let [join        (first joins)
                     join        (cond-> join
                                   (seq? join) first)
-                    join        (cond-> join (util/ident? join) (hash-map '[*]))
+                    join        (cond-> join
+                                  (util/ident? join) (hash-map '[*]))
                     [key sel]   (util/join-entry join)
                     recurse?    (util/recursion? sel)
                     recurse-key (when recurse? key)
@@ -1384,26 +1393,34 @@
                                     (get-in refs (map-ident key)))
                                   (get data key))
                     key         (cond-> key (util/unique-ident? key) first)
-                    v           (if (util/ident? v)
+                    v           (if (mappable-ident? refs v)
                                   (loop [v v]
                                     (let [next (get-in refs (map-ident v))]
-                                      (if (util/ident? next)
+                                      (if (mappable-ident? refs next)
                                         (recur next)
                                         (map-ident v))))
                                   v)
                     limit       (if (number? sel) sel :none)
                     union-entry (if (util/union? join) sel union-expr)
                     sel         (cond
-                                  recurse? (if-not (nil? union-expr)
-                                             union-entry
-                                             (reduce-query-depth query key))
-                                  (and (util/ident? v) (util/union? join)) (get sel (first v))
-                                  (and (util/ident? key) (util/union? join)) (get sel (first key))
+                                  recurse?
+                                  (if-not (nil? union-expr)
+                                    union-entry
+                                    (reduce-query-depth query key))
+
+                                  (and (mappable-ident? refs v)
+                                       (util/union? join))
+                                  (get sel (first v))
+
+                                  (and (util/ident? key)
+                                       (util/union? join))
+                                  (get sel (first key))
+
                                   :else sel)
                     graph-loop? (and recurse?
                                   (contains? (set (get idents-seen key)) v)
                                   (= :none limit))
-                    idents-seen (if (and (util/ident? v) recurse?)
+                    idents-seen (if (and (mappable-ident? refs v) recurse?)
                                   (-> idents-seen
                                     (update-in [key] (fnil conj #{}) v)
                                     (assoc-in [:last-ident key] v)) idents-seen)]

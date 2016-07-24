@@ -714,3 +714,35 @@
     (is (contains? (get t-err 'this/throws) :om.next/error))
     (is (not (contains? (get t-err 'this/throws) :result)))
     (is (= (get (cellophane/transact! r '[(this/throws) :app/count]) :app/count) 2))))
+
+;; Bugs
+
+
+(deftest test-om-637
+  (let [data {:some/list [[:item/by-id 1]]
+              :item/by-id {1 {:id 1
+                              :name "foo"}}}]
+    (is (= (cellophane/db->tree '[{:some/list [*]}] data data)
+           {:some/list [{:id 1, :name "foo"}]})))
+  (is (= (cellophane/db->tree '[[:my-route _]] {:my-route [:some-route]} {:my-route [:some-route]})
+         {:my-route [:some-route]}))
+  (is (= (cellophane/db->tree '[[:my-route _]] {:my-route [:some-route :other-key]} {:my-route [:some-route :other-key]})
+         {:my-route [:some-route :other-key]}))
+  (let [data {:todos/list [[:todo/by-id 42]]
+              :todo/by-id {42 {:id 42
+                               :states [:archived]}}}]
+    (is (= (cellophane/db->tree [{:todos/list [:id :states]}] data data)
+           {:todos/list [{:id 42, :states [:archived]}]})))
+  (let [data {:todos/list [[:todo/by-id 42]]
+              :todo/by-id {42 {:id 42
+                               :states [:done :archived]}}
+              :current-users [{:id 0 :name "John"} {:id 1 :name "Mary"}]}]
+    (is (= (cellophane/db->tree [{:todos/list [:id :states '[:current-users _]]}] data data)
+           {:todos/list [{:id 42, :states [:done :archived]
+                          :current-users [{:id 0 :name "John"}
+                                          {:id 1, :name "Mary"}]}]})))
+  (let [data {:todos/list [{:id 42 :title "do stuff" :states [:done :archived]}
+                           {:id 43 :title "buy milk" :states [:done :archived]}]}]
+    (is (= (cellophane/db->tree [{:todos/list [:id :title]}] data data)
+           {:todos/list [{:id 42 :title "do stuff"}
+                         {:id 43 :title "buy milk"}]}))))
