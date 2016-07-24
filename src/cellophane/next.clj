@@ -318,12 +318,25 @@
                      cellophane.next/*shared*     (cellophane.next/shared this#)
                      cellophane.next/*instrument* (cellophane.next/instrument this#)
                      cellophane.next/*parent*     this#]
-            ~@body))))}
+             (let [ret# (do ~@body)
+                   props# (cellophane.protocols/-props this#)]
+               (when-not @(:cellophaneclj$mounted? props#)
+                     (swap! (:cellophaneclj$mounted? props#) not))
+               ret#)))))
+    'componentWillMount
+    (fn [[name [this :as args] & body]]
+      `(~name [this#]
+         (let [~this    this#
+               indexer# (get-in (cellophane.next/get-reconciler this#) [:config :indexer])]
+           (when-not (nil? indexer#)
+             (om.next.protocols/index-component! indexer# this#))
+           ~@body)))}
    :defaults
    `{~'componentWillMount
-     ([this#])
-     ~'componentDidMount
-     ([this#])
+     ([this#]
+       (let [indexer# (get-in (cellophane.next/get-reconciler this#) [:config :indexer])]
+         (when-not (nil? indexer#)
+           (om.next.protocols/index-component! indexer# this#))))
      ~'render
      ([this#])}})
 
@@ -347,7 +360,6 @@
               dt))]
     (->> dt (map reshape*) vec add-object-protocol add-defaults)))
 
-;; TODO: probably need to reshape dt to implement defaults
 (defn defui* [name forms]
   (let [{:keys [dt statics]} (collect-statics forms)
         [other-protocols obj-dt] (split-with (complement '#{Object}) dt)
@@ -376,8 +388,6 @@
 
                   cellophane.protocols/IReactComponent
                   (~'-render [this#]
-                   (when-not @(:cellophaneclj$mounted? props#)
-                     (swap! (:cellophaneclj$mounted? props#) not))
                    (p/componentWillMount this#)
                    (p/render this#))
                   (~'-props [this]
