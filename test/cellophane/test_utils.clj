@@ -2,6 +2,4 @@
   (:require [clojure.string :as str]))
 
 (defn remove-whitespace [s]
-  (->> (str/split s #">\s+<")
-    (filter #(not (str/blank? %)))
-    (str/join "><")))
+  (str/replace s #"(>)\s+(<)" "$1$2"))
