@@ -770,3 +770,11 @@
     (is (= (cellophane/db->tree [{:todos/list [:id :title]}] data data)
            {:todos/list [{:id 42 :title "do stuff"}
                          {:id 43 :title "buy milk"}]}))))
+
+(deftest test-om-727
+  (let [data {:item [:bar 0]
+              :bar    {0 {:id 0 :next [:bar 1]}
+                       1 {:id 1 :next [:bar 2]}
+                       2 {:id 2}}}]
+    (is (= (cellophane/db->tree [{:item {:foo [:id] :bar [:id {:next '...}]}}] data data)
+           {:item {:id 0, :next {:id 1, :next {:id 2}}}}))))
