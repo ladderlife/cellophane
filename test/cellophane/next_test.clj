@@ -778,3 +778,12 @@
                        2 {:id 2}}}]
     (is (= (cellophane/db->tree [{:item {:foo [:id] :bar [:id {:next '...}]}}] data data)
            {:item {:id 0, :next {:id 1, :next {:id 2}}}}))))
+
+(deftest test-om-732
+  (let [state {:curr-view [:main :view]
+               :main {:view {:curr-item [[:sub-item/by-id 2]]}}
+               :sub-item/by-id {2 {:foo :baz :sub-items [[:sub-item/by-id 4]]}
+                                4 {:foo :bar}}}]
+    (is (= (cellophane/db->tree [{:curr-view
+                          {:main [{:curr-item [:foo {:sub-items '...}]}]}}] state state)
+           {:curr-view {:curr-item [{:foo :baz :sub-items [{:foo :bar}]}]}}))))
