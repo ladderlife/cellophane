@@ -403,9 +403,9 @@
     ;; TODO: not sure if we want to limit values to strings/numbers
     (and (or (contains? supported-attrs (name key))
              (.startsWith (name key) "data-"))
-         (or (string? value) (number? value)))
+         (or (true? value) (string? value) (number? value)))
     (if (true? value)
-      (append! sb " " (name key))
+      (append! sb " " (coerce-attr-key (name key)))
       (render-xml-attribute! sb key value))
 
     :else nil))

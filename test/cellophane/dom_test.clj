@@ -135,7 +135,9 @@
     (dom/div {:className "stuff" :class "other"}) "<div class=\"stuff\" data-reactroot=\"\" data-reactid=\"1\"></div>"
     (dom/div {:media :stuff}) "<div data-reactroot=\"\" data-reactid=\"1\"></div>"
     (dom/div {:data-foo "foo"}) "<div data-foo=\"foo\" data-reactroot=\"\" data-reactid=\"1\"></div>"
-    (dom/div {:foo true}) "<div data-reactroot=\"\" data-reactid=\"1\"></div>"))
+    (dom/div {:foo true}) "<div data-reactroot=\"\" data-reactid=\"1\"></div>"
+    (dom/div {:autoFocus true}) "<div autofocus data-reactroot=\"\" data-reactid=\"1\"></div>"))
+
 
 (def styles
   #js {:textAlign "center"
