@@ -319,10 +319,9 @@
 
 (defn camel->other-case [^String sep]
   (fn ^String [^String s]
-    (->> (str/split s #"(?=[A-Z])")
-      (clojure.core/map #(reduce str %))
-      (clojure.core/map str/lower-case)
-      (str/join sep))))
+    (-> s
+      (str/replace #"([A-Z])" (str sep "$1"))
+      str/lower-case)))
 
 (def camel->kebab-case
   (camel->other-case "-"))
