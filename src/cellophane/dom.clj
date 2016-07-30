@@ -405,10 +405,9 @@
     (and (or (contains? supported-attrs (name key))
              (.startsWith (name key) "data-"))
          (or (string? value) (number? value)))
-    (render-xml-attribute! sb key value)
-
-    (true? value)
-    (append! sb " " (name key))
+    (if (true? value)
+      (append! sb " " (name key))
+      (render-xml-attribute! sb key value))
 
     :else nil))
 
