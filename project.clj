@@ -5,8 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :repositories [["clojars" {:sign-releases false}]]
   :dependencies [[org.clojure/clojure "1.9.0-alpha10" :scope "provided"]
-
-                 [org.omcljs/om "1.0.0-alpha40" :scope "provided"]]
+                 [org.omcljs/om "1.0.0-alpha41" :scope "provided"]]
 
   :jvm-opts ^:replace ["-Xmx1g" "-server"]
   :source-paths ["src" "test"]
@@ -15,7 +14,7 @@
   :target-path "target"
 
   :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.9.93"]
-                                  [cljsjs/react-dom-server "15.2.0-0"]]}
+                                  [cljsjs/react-dom-server "15.2.1-1"]]}
              :perf {:source-paths ["perf"]
                     :dependencies
                     [[enlive    "1.1.6"]
