@@ -145,32 +145,68 @@
     option
     select])
 
+;; https://github.com/facebook/react/blob/57ae3b/src/renderers/dom/shared/SVGDOMPropertyConfig.js
+;; https://github.com/facebook/react/blob/57ae3b/src/renderers/dom/shared/HTMLDOMPropertyConfig.js
 (def supported-attrs
   #{;; HTML
     "accept" "acceptCharset" "accessKey" "action" "allowFullScreen" "allowTransparency" "alt"
     "async" "autoComplete" "autoFocus" "autoPlay" "capture" "cellPadding" "cellSpacing" "challenge"
-    "charSet" "checked" "classID" "className" "colSpan" "cols" "content" "contentEditable"
+    "charSet" "checked" "cite" "classID" "className" "colSpan" "cols" "content" "contentEditable"
     "contextMenu" "controls" "coords" "crossOrigin" "data" "dateTime" "default" "defer" "dir"
     "disabled" "download" "draggable" "encType" "form" "formAction" "formEncType" "formMethod"
     "formNoValidate" "formTarget" "frameBorder" "headers" "height" "hidden" "high" "href" "hrefLang"
     "htmlFor" "httpEquiv" "icon" "id" "inputMode" "integrity" "is" "keyParams" "keyType" "kind" "label"
     "lang" "list" "loop" "low" "manifest" "marginHeight" "marginWidth" "max" "maxLength" "media"
     "mediaGroup" "method" "min" "minLength" "multiple" "muted" "name" "noValidate" "nonce" "open"
-    "optimum" "pattern" "placeholder" "poster" "preload" "radioGroup" "readOnly" "rel" "required"
-    "reversed" "role" "rowSpan" "rows" "sandbox" "scope" "scoped" "scrolling" "seamless" "selected"
+    "optimum" "pattern" "placeholder" "poster" "preload" "profile" "radioGroup" "readOnly" "referrerPolicy"
+    "rel" "required" "reversed" "role" "rowSpan" "rows" "sandbox" "scope" "scoped" "scrolling" "seamless" "selected"
     "shape" "size" "sizes" "span" "spellCheck" "src" "srcDoc" "srcLang" "srcSet" "start" "step" "style" "summary"
     "tabIndex" "target" "title" "type" "useMap" "value" "width" "wmode" "wrap"
     ;; RDF
     "about" "datatype" "inlist" "prefix" "property" "resource" "typeof" "vocab"
     ;; SVG
-    "clipPath" "cx" "cy" "d" "dx" "dy" "fill" "fillOpacity" "fontFamily"
-    "fontSize" "fx" "fy" "gradientTransform" "gradientUnits" "markerEnd"
-    "markerMid" "markerStart" "offset" "opacity" "patternContentUnits"
-    "patternUnits" "points" "preserveAspectRatio" "r" "rx" "ry" "spreadMethod"
-    "stopColor" "stopOpacity" "stroke" "strokeDasharray" "strokeLinecap"
-    "strokeOpacity" "strokeWidth" "textAnchor" "transform" "version"
-    "viewBox" "x1" "x2" "x" "xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole"
-    "xlinkShow" "xlinkTitle" "xlinkType" "xmlBase" "xmlLang" "xmlSpace" "y1" "y2" "y"
+    "accentHeight" "accumulate" "additive" "alignmentBaseline" "allowReorder" "alphabetic"
+    "amplitude" "ascent" "attributeName" "attributeType" "autoReverse" "azimuth"
+    "baseFrequency" "baseProfile" "bbox" "begin" "bias" "by" "calcMode" "clip"
+    "clipPathUnits" "contentScriptType" "contentStyleType" "cursor" "cx" "cy" "d"
+    "decelerate" "descent" "diffuseConstant" "direction" "display" "divisor" "dur"
+    "dx" "dy" "edgeMode" "elevation" "end" "exponent" "externalResourcesRequired"
+    "fill" "filter" "filterRes" "filterUnits" "focusable" "format" "from" "fx" "fy"
+    "g1" "g2" "glyphRef" "gradientTransform" "gradientUnits" "hanging" "ideographic"
+    "in" "in2" "intercept" "k" "k1" "k2" "k3" "k4" "kernelMatrix" "kernelUnitLength"
+    "kerning" "keyPoints" "keySplines" "keyTimes" "lengthAdjust" "limitingConeAngle"
+    "local" "markerHeight" "markerUnits" "markerWidth" "mask" "maskContentUnits"
+    "maskUnits" "mathematical" "mode" "numOctaves" "offset" "opacity" "operator"
+    "order" "orient" "orientation" "origin" "overflow" "pathLength" "patternContentUnits"
+    "patternTransform" "patternUnits" "points" "pointsAtX" "pointsAtY" "pointsAtZ"
+    "preserveAlpha" "preserveAspectRatio" "primitiveUnits" "r" "radius" "refX" "refY"
+    "repeatCount" "repeatDur" "requiredExtensions" "requiredFeatures" "restart"
+    "result" "rotate" "rx" "ry" "scale" "seed" "slope" "spacing" "specularConstant"
+    "specularExponent" "speed" "spreadMethod" "startOffset" "stdDeviation" "stemh"
+    "stemv" "stitchTiles" "string" "stroke" "surfaceScale" "systemLanguage" "tableValues"
+    "targetX" "targetY" "textLength" "to" "transform" "u1" "u2" "unicode" "values"
+    "version" "viewBox" "viewTarget" "visibility" "widths" "x" "x1" "x2" "xChannelSelector"
+    "xmlns" "y" "y1" "y2" "yChannelSelector" "z" "zoomAndPan" "arabicForm" "baselineShift"
+    "capHeight" "clipPath" "clipRule" "colorInterpolation" "colorInterpolationFilters"
+    "colorProfile" "colorRendering" "dominantBaseline" "enableBackground" "fillOpacity"
+    "fillRule" "floodColor" "floodOpacity" "fontFamily" "fontSize" "fontSizeAdjust"
+    "fontStretch" "fontStyle" "fontVariant" "fontWeight" "glyphName" "glyphOrientationHorizontal"
+    "glyphOrientationVertical" "horizAdvX" "horizOriginX" "imageRendering" "letterSpacing"
+    "lightingColor" "markerEnd" "markerMid" "markerStart" "overlinePosition" "overlineThickness"
+    "paintOrder" "panose1" "pointerEvents" "renderingIntent" "shapeRendering" "stopColor"
+    "stopOpacity" "strikethroughPosition" "strikethroughThickness" "strokeDasharray"
+    "strokeDashoffset" "strokeLinecap" "strokeLinejoin" "strokeMiterlimit" "strokeOpacity"
+    "strokeWidth" "textAnchor" "textDecoration" "textRendering" "underlinePosition"
+    "underlineThickness" "unicodeBidi" "unicodeRange" "unitsPerEm" "vAlphabetic"
+    "vHanging" "vIdeographic" "vMathematical" "vectorEffect" "vertAdvY" "vertOriginX"
+    "vertOriginY" "wordSpacing" "writingMode" "xHeight"
+
+    "xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole" "xlinkShow" "xlinkTitle"
+    "xlinkType" "xmlBase" "xmlnsXlink" "xmlLang" "xmlSpace"
+
+    ;; Non-standard Properties
+    "autoCapitalize" "autoCorrect" "autoSave" "color" "itemProp" "itemScope"
+    "itemType" "itemID" "itemRef" "results" "security" "unselectable"
 
     ;; Special case
     "data-reactid" "data-reactroot"})
@@ -190,17 +226,31 @@
     "formTarget" "frameBorder" "hrefLang" "inputMode" "keyParams"
     "keyType" "marginHeight" "marginWidth" "maxLength" "mediaGroup"
     "minLength" "noValidate" "radioGroup" "readOnly" "rowSpan"
-    "spellCheck" "srcDoc" "srcLang" "srcSet" "tabIndex" "useMap" })
+    "spellCheck" "srcDoc" "srcLang" "srcSet" "tabIndex" "useMap"
+    "autoCapitalize" "autoCorrect" "autoSave" "itemProp" "itemScope"
+    "itemType" "itemID" "itemRef"})
 
 (def kebab-case-attrs
-  #{"acceptCharset" "httpEquiv" "fillOpacity" "fontFamily" "fontSize"
-    "markerEnd" "markerMid" "markerStart" "stopColor" "stopOpacity"
-    "strokeDasharray" "strokeLinecap" "strokeOpacity" "strokeWidth"
-    "textAnchor"})
+  #{"acceptCharset" "httpEquiv" "accentHeight" "alignmentBaseline" "arabicForm"
+    "baselineShift" "capHeight" "clipPath" "clipRule" "colorInterpolation"
+    "colorInterpolationFilters" "colorProfile" "colorRendering" "dominantBaseline"
+    "enableBackground" "fillOpacity" "fillRule" "floodColor" "floodOpacity"
+    "fontFamily" "fontSize" "fontSizeAdjust" "fontStretch" "fontStyle"
+    "fontVariant" "fontWeight" "glyphName" "glyphOrientationHorizontal"
+    "glyphOrientationVertical" "horizAdvX" "horizOriginX" "imageRendering"
+    "letterSpacing" "lightingColor" "markerEnd" "markerMid" "markerStart"
+    "overlinePosition" "overlineThickness" "paintOrder" "panose1" "pointerEvents"
+    "renderingIntent" "shapeRendering" "stopColor" "stopOpacity" "strikethroughPosition"
+    "strikethroughThickness" "strokeDasharray" "strokeDashoffset" "strokeLinecap"
+    "strokeLinejoin" "strokeMiterlimit" "strokeOpacity" "strokeWidth" "textAnchor"
+    "textDecoration" "textRendering" "underlinePosition" "underlineThickness"
+    "unicodeBidi" "unicodeRange" "unitsPerEm" "vAlphabetic" "vHanging" "vIdeographic"
+    "vMathematical" "vectorEffect" "vertAdvY" "vertOriginX" "vertOriginY" "wordSpacing"
+    "writingMode" "xHeight"})
 
 (def colon-between-attrs
-  #{"xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole"
-    "xlinkShow" "xlinkTitle" "xlinkType" "xmlBase" "xmlLang" "xmlSpace"})
+  #{"xlinkActuate" "xlinkArcrole" "xlinkHref" "xlinkRole" "xlinkShow" "xlinkTitle"
+    "xlinkType" "xmlBase" "xmlnsXlink" "xmlLang" "xmlSpace"})
 
 (declare render-element!)
 
@@ -320,7 +370,7 @@
 (defn camel->other-case [^String sep]
   (fn ^String [^String s]
     (-> s
-      (str/replace #"([A-Z])" (str sep "$1"))
+      (str/replace #"([A-Z0-9])" (str sep "$1"))
       str/lower-case)))
 
 (def camel->kebab-case

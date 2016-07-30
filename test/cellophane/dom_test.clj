@@ -136,7 +136,13 @@
     (dom/div {:media :stuff}) "<div data-reactroot=\"\" data-reactid=\"1\"></div>"
     (dom/div {:data-foo "foo"}) "<div data-foo=\"foo\" data-reactroot=\"\" data-reactid=\"1\"></div>"
     (dom/div {:foo true}) "<div data-reactroot=\"\" data-reactid=\"1\"></div>"
-    (dom/div {:autoFocus true}) "<div autofocus data-reactroot=\"\" data-reactid=\"1\"></div>"))
+    (dom/div {:autoFocus true}) "<div autofocus data-reactroot=\"\" data-reactid=\"1\"></div>"
+    (dom/div #js {:autoCapitalize true
+                  :color "tomato"
+                  :itemScope 1
+                  :keyParams true})
+    "<div autocapitalize color=\"tomato\" itemscope=\"1\" keyparams data-reactroot=\"\" data-reactid=\"1\"></div>"
+    (dom/svg #js {:panose1 "stuff"}) "<svg panose-1=\"stuff\" data-reactroot=\"\" data-reactid=\"1\"></svg>"))
 
 
 (def styles
