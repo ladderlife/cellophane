@@ -514,4 +514,7 @@
   (is (= (str (#'dom/render-to-str* (dom/input #js {:value "foo" :step 3 :name "points" :type "number"})))
          "<input type=\"number\" step=\"3\" value=\"foo\" name=\"points\" data-reactroot=\"\" data-reactid=\"1\"/>"))
   (is (= (str (#'dom/render-to-str* (dom/input #js {:value "foo" :type "number" :name "points" :step 3})))
-         "<input type=\"number\" step=\"3\" value=\"foo\" name=\"points\" data-reactroot=\"\" data-reactid=\"1\"/>")))
+         "<input type=\"number\" step=\"3\" value=\"foo\" name=\"points\" data-reactroot=\"\" data-reactid=\"1\"/>"))
+  ;; https://github.com/facebook/react/commit/3013af
+  (is (= (str (#'dom/render-to-str* (dom/input #js {:max 42 :value "foo" :min 10 :type "number" :name "points" :step 3})))
+         "<input type=\"number\" step=\"3\" min=\"10\" max=\"42\" value=\"foo\" name=\"points\" data-reactroot=\"\" data-reactid=\"1\"/>")))

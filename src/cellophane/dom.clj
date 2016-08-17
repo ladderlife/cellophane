@@ -461,8 +461,8 @@
     :else nil))
 
 ;; some props assigned first in input and option. see:
-;; https://github.com/facebook/react/blob/08a08/src/renderers/dom/client/wrappers/ReactDOMOption.js#L108
-;; https://github.com/facebook/react/blob/08a08/src/renderers/dom/client/wrappers/ReactDOMInput.js#L58
+;; https://github.com/facebook/react/blob/680685/src/renderers/dom/client/wrappers/ReactDOMOption.js#L108
+;; https://github.com/facebook/react/blob/680685/src/renderers/dom/client/wrappers/ReactDOMInput.js#L63
 (defn render-attr-map! [sb tag attrs]
   (letfn [(sorter [order]
             (fn [[k _]]
@@ -470,7 +470,8 @@
                              (apply max)
                              inc))))]
     (let [attrs (cond->> attrs
-                  (= tag "input") (sort-by (sorter {:type 0 :step 1}))
+                  (= tag "input") (sort-by (sorter {:type 0 :step 1
+                                                    :min 2 :max 3}))
                   (= tag "option") (sort-by (sorter {:selected 0})))]
       (run! (partial render-attribute! sb) attrs))))
 
