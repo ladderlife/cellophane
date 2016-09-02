@@ -361,7 +361,11 @@
     (->> dt (map reshape*) vec add-object-protocol add-defaults)))
 
 (defn defui* [name forms]
-  (let [{:keys [dt statics]} (collect-statics forms)
+  (let [docstring (when (string? (first forms))
+                    (first forms))
+        forms (cond-> forms
+                docstring rest)
+        {:keys [dt statics]} (collect-statics forms)
         [other-protocols obj-dt] (split-with (complement '#{Object}) dt)
         class-methods (when-not (empty? (:protocols statics))
                         (->> (partition 2 (:protocols statics))
@@ -396,7 +400,10 @@
                    state#)
                   (~'-refs [this]
                    refs#)))]
-       (def ~name
+       (def ~(with-meta name
+               (merge (meta name)
+                 (when docstring
+                   {:doc docstring})))
          (with-meta c# (merge {:component c#
                                :component-name (str (ns-name *ns*) "$" ~(str name))}
                          ~class-methods))))))
