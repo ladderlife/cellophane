@@ -787,3 +787,17 @@
     (is (= (cellophane/db->tree [{:curr-view
                           {:main [{:curr-item [:foo {:sub-items '...}]}]}}] state state)
            {:curr-view {:curr-item [{:foo :baz :sub-items [{:foo :bar}]}]}}))))
+
+(defui ^:private Private
+  static cellophane/IQuery
+  (query [this]
+    [:foo]))
+
+(defui ^:private ^:once PrivateOnce
+  static cellophane/IQuery
+  (query [this]
+    [:foo]))
+
+(deftest test-om-739
+  (is (true? (-> #'Private meta :private)))
+  (is (true? (-> #'PrivateOnce meta :private))))
