@@ -811,3 +811,8 @@
 
 (deftest test-om-746
   (is (= (-> #'OM-746-Component meta :doc) "Some docstring")))
+
+(deftest test-transform-reads-drops-exprs
+  (let [r (cellophane/reconciler
+            {:state (atom nil)})]
+    (is (= '[:foo :bar] (cellophane/transform-reads r '[:foo :bar])))))
