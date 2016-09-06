@@ -812,7 +812,39 @@
 (deftest test-om-746
   (is (= (-> #'OM-746-Component meta :doc) "Some docstring")))
 
+;; -----------------------------------------------------------------------------
+;; tranform-reads
+
 (deftest test-transform-reads-drops-exprs
   (let [r (cellophane/reconciler
-            {:state (atom nil)})]
-    (is (= '[:foo :bar] (cellophane/transform-reads r '[:foo :bar])))))
+            {:state (atom nil)
+             :parser (cellophane/parser {:read #(do {})})})]
+    (is (= '[:foo :bar] (cellophane/transform-reads r '[:foo :bar])))
+    (with-redefs [cellophane/ref->components (fn [r k]
+                                       (if (= k :foo) [nil] []))
+                  cellophane/get-query (constantly [{:foo [:bar]}])
+                  cellophane/full-query (constantly [{:foo [:bar]}])]
+      (is (= (cellophane/transform-reads r '[:foo :baz])
+             '[{:foo [:bar]} :baz])))
+    (with-redefs [cellophane/ref->components (constantly [nil])
+                  cellophane/get-query (constantly [{:foo [:bar]}])
+                  cellophane/full-query (constantly [{:foo [:bar]}])]
+      (is (= (cellophane/transform-reads r '[:foo :bar])
+             '[{:foo [:bar]}])))
+    (with-redefs [cellophane/ref->components (fn [r k]
+                                       (if (= k :foo) [nil] []))
+                  cellophane/get-query (constantly [{:foo [:bar]}])
+                  cellophane/full-query (constantly [{:foo [:bar]}])]
+      (is (= (cellophane/transform-reads r '[(do/it!) :foo :baz])
+             '[(do/it!) {:foo [:bar]} :baz])))
+    (with-redefs [cellophane/ref->components (fn [r k]
+                                       (if (= k :foo) [nil] []))
+                  cellophane/get-query (constantly [{:foo [:bar]}])
+                  cellophane/full-query (constantly [{:foo [:bar]}])]
+      (is (= (cellophane/transform-reads r '[(do/it!) (do/it!) :foo :baz])
+             '[(do/it!) (do/it!) {:foo [:bar]} :baz])))
+    (with-redefs [cellophane/ref->components (constantly [nil])
+                  cellophane/get-query (constantly [{:foo [:bar]}])
+                  cellophane/full-query (constantly [{:foo [:bar]}])]
+      (is (= (cellophane/transform-reads r '[(do/it!) (do/it!) :foo :bar])
+             '[(do/it!) (do/it!) {:foo [:bar]}])))))
