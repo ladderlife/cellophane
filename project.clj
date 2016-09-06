@@ -13,7 +13,7 @@
   :clean-targets ["target"]
   :target-path "target"
 
-  :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.9.93"]
+  :profiles {:dev {:dependencies [[org.clojure/clojurescript "1.9.227"]
                                   [cljsjs/react-dom-server "15.2.1-1"]]}
              :perf {:source-paths ["perf"]
                     :dependencies
