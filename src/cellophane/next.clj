@@ -869,6 +869,13 @@
               (util/mutation? expr) (vary-meta assoc :mutator ident)))]
     (into [] (map #(annotate % ident)) tx)))
 
+(defn some-iquery? [c]
+  (loop [c c]
+    (cond
+      (nil? c) false
+      (iquery? c) true
+      :else (recur (parent c)))))
+
 (defn transact!
   "Given a reconciler or component run a transaction. tx is a parse expression
    that should include mutations followed by any necessary read. The reads will
