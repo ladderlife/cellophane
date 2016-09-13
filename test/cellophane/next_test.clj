@@ -826,6 +826,12 @@
                   cellophane/full-query (constantly [{:foo [:bar]}])]
       (is (= (cellophane/transform-reads r '[:foo :baz])
              '[{:foo [:bar]} :baz])))
+    (with-redefs [cellophane/ref->components (fn [r k]
+                                       (if (= k :foo) [nil] []))
+                  cellophane/get-query (constantly [{:foo [:bar]}])
+                  cellophane/full-query (constantly [{:foo [:bar]}])]
+      (is (= (cellophane/transform-reads r '[:foo (:baz {:woz :noz})])
+             '[{:foo [:bar]} (:baz {:woz :noz})])))
     (with-redefs [cellophane/ref->components (constantly [nil])
                   cellophane/get-query (constantly [{:foo [:bar]}])
                   cellophane/full-query (constantly [{:foo [:bar]}])]
