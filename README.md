@@ -2,6 +2,8 @@
 
 Server-side rendering for Om Next components
 
+## Note: as of [Om #764](https://github.com/omcljs/om/pull/764), server-side rendering support landed in Om, which makes this repository deprecated.
+
 ## Contents
 
 - [Installation](#installation)
